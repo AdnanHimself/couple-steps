@@ -72,33 +72,42 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                         { accessType: 'write' as const, recordType: 'Steps' as const }
                     ];
 
-                    await requestPermission(permissionsRequested);
+                    try {
+                        await requestPermission(permissionsRequested);
 
-                    // Verify permissions were granted
-                    const grantedPermissions = await getGrantedPermissions();
-                    const hasReadPermission = grantedPermissions.some(
-                        p => p.recordType === 'Steps' && p.accessType === 'read'
-                    );
+                        // Verify permissions were granted
+                        const grantedPermissions = await getGrantedPermissions();
+                        const hasReadPermission = grantedPermissions.some(
+                            p => p.recordType === 'Steps' && p.accessType === 'read'
+                        );
 
-                    if (!hasReadPermission) {
-                        Logger.error('Health Connect permissions not granted');
+                        if (!hasReadPermission) {
+                            Logger.info('Health Connect permissions not granted by user');
+                            return;
+                        }
+
+                        Logger.info('Health Connect initialized with permissions');
+                    } catch (permError) {
+                        Logger.error('Health Connect permission error - continuing without it:', permError);
                         return;
                     }
-
-                    Logger.info('Health Connect initialized with permissions');
                 }
             }
 
             // 2. Start Pedometer (Foreground/Real-time)
-            const isAvailable = await Pedometer.isAvailableAsync();
-            if (isAvailable) {
-                // Watch for live updates
-                Pedometer.watchStepCount(result => {
-                    // We only use this for "live" UI feedback, but rely on Health Connect for the source of truth
-                    // Or we can accumulate. For now, let's just log it.
-                    // console.log('Live Pedometer Step:', result.steps);
-                    // In a real hybrid implementation, we would merge this with the base count.
-                });
+            try {
+                const isAvailable = await Pedometer.isAvailableAsync();
+                if (isAvailable) {
+                    // Watch for live updates
+                    Pedometer.watchStepCount(result => {
+                        // We only use this for "live" UI feedback, but rely on Health Connect for the source of truth
+                        // Or we can accumulate. For now, let's just log it.
+                        // console.log('Live Pedometer Step:', result.steps);
+                        // In a real hybrid implementation, we would merge this with the base count.
+                    });
+                }
+            } catch (pedometerError) {
+                Logger.error('Pedometer error - continuing without it:', pedometerError);
             }
 
             // 3. Polling Mechanism (Sync every 1 min)

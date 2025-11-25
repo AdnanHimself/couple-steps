@@ -21,7 +21,7 @@ type CouplingScreenProps = {
 
 export const CouplingScreen = ({ navigation }: CouplingScreenProps) => {
     const [mode, setMode] = useState<'select' | 'generate' | 'scan'>('select');
-    const { currentUser } = useApp();
+    const { currentUser, refreshData } = useApp();
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
     const [scanned, setScanned] = useState(false);
 
@@ -98,8 +98,14 @@ export const CouplingScreen = ({ navigation }: CouplingScreenProps) => {
                             if (currentUser) {
                                 const result = await CouplingService.linkPartners(currentUser.id, partnerId);
                                 if (result.success) {
-                                    Alert.alert('Success', 'You are now linked! 🎉');
-                                    navigation.replace('Main');
+                                    // Refresh data to load the new partner
+                                    await refreshData();
+                                    Alert.alert('Success', 'You are now linked! 🎉', [
+                                        {
+                                            text: 'OK',
+                                            onPress: () => navigation.replace('Main')
+                                        }
+                                    ]);
                                 } else {
                                     Alert.alert('Error', result.error || 'Could not link partners.');
                                     setScanned(false);
