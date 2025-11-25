@@ -1,51 +1,78 @@
 import { supabase } from '../lib/supabase';
+import { Logger } from '../utils/Logger';
 
 export const SeedService = {
     seedChallenges: async () => {
         try {
-            console.log('Seeding challenges...');
+            Logger.info('Seeding challenges...');
 
-            // 1. Define Real Challenges
+            // 1. Define Challenges
             const realChallenges = [
+                // Beginner Challenge (Only 1)
                 {
-                    title: 'Weekend Warrior',
-                    description: 'Walk 15,000 steps this weekend. Perfect for a city stroll or a short hike.',
-                    goal: 15000,
-                    duration_days: 2,
-                    category: 'weekend',
-                    image_url: 'https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=800&q=80' // Nature/Hike
+                    title: 'Beginner\'s Step',
+                    description: 'Start small. Walk 3,000 steps today to get the ball rolling.',
+                    goal: 3000,
+                    duration_days: 1,
+                    category: 'beginner',
+                    type: 'solo',
+                    image_url: 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=800&q=80' // Walking shoes
                 },
+                // Solo Challenges
                 {
-                    title: 'Couch to 5k Steps',
-                    description: 'A gentle start. Walk 5,000 steps every day for a week.',
-                    goal: 35000, // 5k * 7
-                    duration_days: 7,
-                    category: 'weekly',
-                    image_url: 'https://images.unsplash.com/photo-1486218119243-13883505764c?w=800&q=80' // Running shoes/walking
-                },
-                {
-                    title: 'Marathon Month',
-                    description: 'The ultimate test. 300,000 steps in 30 days. That\'s 10k a day!',
-                    goal: 300000,
-                    duration_days: 30,
-                    category: 'monthly',
-                    image_url: 'https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=800&q=80' // Runner
-                },
-                {
-                    title: 'Date Night Stroll',
-                    description: 'Walk 6,000 steps together in one evening.',
+                    title: 'Morning Jog',
+                    description: 'A quick 5k run to start the day right.',
                     goal: 6000,
                     duration_days: 1,
-                    category: 'daily',
-                    image_url: 'https://images.unsplash.com/photo-1518152006812-edab29b069ac?w=800&q=80' // Couple walking
+                    category: 'fitness',
+                    type: 'solo',
+                    image_url: 'https://images.unsplash.com/photo-1538805060512-e2c964ea02ed?w=800&q=80' // Jogging
                 },
                 {
                     title: 'Urban Explorer',
-                    description: 'Discover your city. 20,000 steps in a single day.',
-                    goal: 20000,
+                    description: 'Discover your city. 15,000 steps of urban adventure.',
+                    goal: 15000,
                     duration_days: 1,
-                    category: 'daily',
-                    image_url: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80' // City
+                    category: 'adventure',
+                    type: 'solo',
+                    image_url: 'https://images.unsplash.com/photo-1449824913929-2b3a3e36f0c1?w=800&q=80' // City
+                },
+                // Epic Journeys (Couple)
+                {
+                    title: 'The Great Wall',
+                    description: 'A legendary journey along the Great Wall of China. 20,000 steps to conquer the dragon.',
+                    goal: 20000,
+                    duration_days: 2,
+                    category: 'epic',
+                    type: 'couple',
+                    image_url: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800&q=80' // Great Wall
+                },
+                {
+                    title: 'Camino de Santiago',
+                    description: 'Walk the pilgrim\'s path. 50,000 steps of reflection and endurance.',
+                    goal: 50000,
+                    duration_days: 5,
+                    category: 'epic',
+                    type: 'couple',
+                    image_url: 'https://images.unsplash.com/photo-1566230463389-7667c2427216?w=800&q=80' // Camino
+                },
+                {
+                    title: 'Route 66',
+                    description: 'Get your kicks on Route 66. A massive 100,000 step road trip on foot.',
+                    goal: 100000,
+                    duration_days: 14,
+                    category: 'epic',
+                    type: 'couple',
+                    image_url: 'https://images.unsplash.com/photo-1525351326368-efbb5cb68ee4?w=800&q=80' // Route 66
+                },
+                {
+                    title: 'New Zealand Traverse',
+                    description: 'From North to South. The ultimate 200,000 step adventure through Middle Earth.',
+                    goal: 200000,
+                    duration_days: 30,
+                    category: 'epic',
+                    type: 'couple',
+                    image_url: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80' // NZ
                 }
             ];
 
@@ -57,7 +84,7 @@ export const SeedService = {
                 .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all UUIDs
 
             if (deleteError) {
-                console.log('Could not clear challenges (likely in use), appending new ones instead.', deleteError);
+                Logger.info('Could not clear challenges (likely in use), appending new ones instead.', deleteError);
             }
 
             // 3. Insert New
@@ -67,10 +94,10 @@ export const SeedService = {
 
             if (insertError) throw insertError;
 
-            console.log('Seeding complete!');
+            Logger.info('Seeding complete!');
             return true;
         } catch (e) {
-            console.error('Seeding failed:', e);
+            Logger.error('Seeding failed:', e);
             return false;
         }
     }

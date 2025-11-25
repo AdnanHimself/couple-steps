@@ -4,101 +4,79 @@ import { Colors, Layout } from '../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../lib/supabase';
 import { UserService } from '../services/UserService';
+import { Logger } from '../utils/Logger';
+import { DebugBottomSheet } from '../components/DebugBottomSheet';
+
+// Simple email validation helper
+const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 export const AuthScreen = ({ navigation }: any) => {
-    // State management for form inputs and loading status
+    // Form state
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
     const [loading, setLoading] = useState(false);
-    const [isSignUp, setIsSignUp] = useState(true); // Default to Sign Up for new users
+    const [isSignUp, setIsSignUp] = useState(true);
+    const [showDebug, setShowDebug] = useState(false);
 
-    // Validate email format
-    const isValidEmail = (email: string) => {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    };
-
-    // Main authentication handler
     const handleAuth = async () => {
-        // 1. Basic Validation
+        // Basic validation
         if (!email || !password || (isSignUp && !name)) {
             Alert.alert('Missing Information', 'Please fill in all required fields.');
             return;
         }
-
         if (!isValidEmail(email)) {
             Alert.alert('Invalid Email', 'Please enter a valid email address.');
             return;
         }
-
         if (password.length < 6) {
             Alert.alert('Weak Password', 'Password must be at least 6 characters long.');
             return;
         }
-
+        if (isSignUp && name.length < 3) {
+            Alert.alert('Invalid Name', 'Username must be at least 3 characters long.');
+            return;
+        }
         if (isSignUp) {
-            if (name.length < 3) {
-                Alert.alert('Invalid Name', 'Username must be at least 3 characters long.');
-                return;
-            }
-
-            // Check username availability
-            const isAvailable = await UserService.checkUsernameAvailability(name.trim());
-            if (!isAvailable) {
+            const available = await UserService.checkUsernameAvailability(name.trim());
+            if (!available) {
                 Alert.alert('Username Taken', 'This username is already taken. Please choose another one.');
                 return;
             }
         }
-
         setLoading(true);
         try {
             if (isSignUp) {
-                // --- SIGN UP FLOW ---
-
-                // Attempt to create user in Supabase Auth
-                // We pass 'username' and 'avatar_url' in metadata so the database trigger can automatically create the profile
                 const { data, error } = await supabase.auth.signUp({
                     email,
                     password,
                     options: {
                         data: {
                             username: name.trim(),
-                            avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=random`
-                        }
-                    }
+                            avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name.trim())}&background=random`,
+                        },
+                    },
                 });
-
                 if (error) throw error;
-
-                // Check if session exists (Auto-login successful)
-                if (data.session) {
-                    // Navigation is handled automatically by the Auth State Listener in App.tsx
-                    console.log('Sign up successful, auto-logged in');
-                } else if (data.user && !data.session) {
-                    // User created but email confirmation required
-                    Alert.alert(
-                        'Verification Sent',
-                        'Please check your email to confirm your account before logging in.'
-                    );
-                    setIsSignUp(false); // Switch to login mode
+                if (data?.session) {
+                    // Auto‑login successful – navigation handled by auth listener elsewhere
+                    console.log('Sign up successful, auto‑logged in');
+                } else if (data?.user && !data?.session) {
+                    Alert.alert('Verification Sent', 'Please check your email to confirm your account before logging in.');
+                    setIsSignUp(false);
                 }
             } else {
-                // --- SIGN IN FLOW ---
-                const { error } = await supabase.auth.signInWithPassword({
-                    email,
-                    password,
-                });
-
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) {
                     if (error.message.includes('Invalid login credentials')) {
                         throw new Error('Incorrect email or password. Please try again.');
                     }
                     throw error;
                 }
-                // Navigation is handled automatically by the Auth State Listener
+                // Sign‑in successful – navigation handled by auth listener
             }
         } catch (e: any) {
-            console.error('Auth Error:', e.message);
+            Logger.error('Auth Error:', e);
             Alert.alert('Authentication Failed', e.message);
         } finally {
             setLoading(false);
@@ -126,7 +104,7 @@ export const AuthScreen = ({ navigation }: any) => {
                                 <TextInput
                                     style={styles.input}
                                     placeholder="Your Name"
-                                    placeholderTextColor={Colors.textSecondary}
+                                    placeholderTextColor={Colors.secondary}
                                     value={name}
                                     onChangeText={setName}
                                     autoCapitalize="words"
@@ -139,7 +117,7 @@ export const AuthScreen = ({ navigation }: any) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="hello@example.com"
-                                placeholderTextColor={Colors.textSecondary}
+                                placeholderTextColor={Colors.secondary}
                                 value={email}
                                 onChangeText={setEmail}
                                 autoCapitalize="none"
@@ -153,19 +131,14 @@ export const AuthScreen = ({ navigation }: any) => {
                             <TextInput
                                 style={styles.input}
                                 placeholder="••••••••"
-                                placeholderTextColor={Colors.textSecondary}
+                                placeholderTextColor={Colors.secondary}
                                 value={password}
                                 onChangeText={setPassword}
                                 secureTextEntry
                             />
                         </View>
 
-                        <TouchableOpacity
-                            style={styles.button}
-                            onPress={handleAuth}
-                            disabled={loading}
-                            activeOpacity={0.8}
-                        >
+                        <TouchableOpacity style={styles.button} onPress={handleAuth} disabled={loading} activeOpacity={0.8}>
                             {loading ? (
                                 <ActivityIndicator color="#FFF" />
                             ) : (
@@ -173,20 +146,21 @@ export const AuthScreen = ({ navigation }: any) => {
                             )}
                         </TouchableOpacity>
 
-                        <TouchableOpacity
-                            style={styles.switchButton}
-                            onPress={() => {
-                                setIsSignUp(!isSignUp);
-                                // Clear errors or reset state if needed when switching
-                            }}
-                        >
+                        <TouchableOpacity style={styles.switchButton} onPress={() => setIsSignUp(!isSignUp)}>
                             <Text style={styles.switchText}>
                                 {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
                             </Text>
                         </TouchableOpacity>
+
+                        {/* Debug button */}
+                        <TouchableOpacity style={[styles.switchButton, { marginTop: 5 }]} onPress={() => setShowDebug(true)}>
+                            <Text style={styles.switchText}>Debug Logs</Text>
+                        </TouchableOpacity>
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
+            {/* Debug Bottom Sheet */}
+            {showDebug && <DebugBottomSheet visible={showDebug} onClose={() => setShowDebug(false)} />}
         </SafeAreaView>
     );
 };
@@ -213,7 +187,7 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: 16,
-        color: Colors.textSecondary,
+        color: Colors.secondary,
         textAlign: 'center',
     },
     form: {
@@ -260,7 +234,8 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     switchText: {
-        color: Colors.textSecondary,
+        color: Colors.secondary,
         fontSize: 14,
+        fontWeight: '600',
     },
 });

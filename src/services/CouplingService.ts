@@ -1,10 +1,11 @@
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
 import { Colors } from '../constants/Colors';
+import { Logger } from '../utils/Logger';
 
 export const CouplingService = {
     // Link two users as a couple
-    linkPartners: async (userId: string, partnerId: string): Promise<boolean> => {
+    linkPartners: async (userId: string, partnerId: string): Promise<{ success: boolean; error?: string }> => {
         try {
             // Check if already linked
             const { data: existing } = await supabase
@@ -14,8 +15,8 @@ export const CouplingService = {
                 .single();
 
             if (existing) {
-                console.log('User already has a partner');
-                return false;
+                Logger.info('User already has a partner');
+                return { success: false, error: 'You already have a partner' };
             }
 
             // Create the link
@@ -27,10 +28,10 @@ export const CouplingService = {
                 });
 
             if (error) throw error;
-            return true;
+            return { success: true };
         } catch (e) {
-            console.error('Coupling Error:', e);
-            return false;
+            Logger.error('Coupling Error:', e);
+            return { success: false, error: 'Network error. Please try again.' };
         }
     },
 
@@ -58,32 +59,43 @@ export const CouplingService = {
 
             return {
                 id: partnerId,
-                username: profile?.full_name || 'Partner',
+                username: profile?.username || profile?.full_name || 'Partner',
                 avatarUrl: profile?.avatar_url || 'https://i.pravatar.cc/150?u=' + partnerId,
                 color: Colors.secondary
             };
         } catch (e) {
-            console.error('Get Partner Error:', e);
+            Logger.error('Get Partner Error:', e);
             return null;
         }
     },
 
     disconnectPartner: async (userId: string): Promise<boolean> => {
         try {
-            // We need to find the couple entry where this user is either user_1 or user_2
-            // And effectively delete the row or nullify. 
-            // Since our schema is 'couples' table with user_1 and user_2.
-            // Deleting the row is the cleanest way to "uncouple".
+            // 1. First, find the couple_id to cleanup challenges
+            const { data: couple } = await supabase
+                .from('couples')
+                .select('id')
+                .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+                .single();
 
+            // 2. Delete active couple challenges (prevents orphaned challenges)
+            if (couple) {
+                await supabase
+                    .from('couple_challenges')
+                    .delete()
+                    .eq('couple_id', couple.id);
+            }
+
+            // 3. Delete the couple relationship
             const { error } = await supabase
                 .from('couples')
                 .delete()
-                .or(`user_1.eq.${userId},user_2.eq.${userId}`);
+                .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
 
             if (error) throw error;
             return true;
         } catch (e) {
-            console.error('Disconnect Error:', e);
+            Logger.error('Disconnect Error:', e);
             return false;
         }
     }

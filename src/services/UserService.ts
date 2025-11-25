@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { Logger } from '../utils/Logger';
 
 export const UserService = {
     async updateProfile(userId: string, updates: { username?: string; avatarUrl?: string }): Promise<boolean> {
@@ -13,7 +14,7 @@ export const UserService = {
                 .eq('id', userId);
 
             if (error) {
-                console.error('Error updating profile:', error);
+                Logger.error('Error updating profile:', error);
                 return false;
             }
 
@@ -27,7 +28,7 @@ export const UserService = {
 
             return true;
         } catch (e) {
-            console.error('UserService Update Error:', e);
+            Logger.error('UserService Update Error:', e);
             return false;
         }
     },
@@ -42,9 +43,9 @@ export const UserService = {
             if (error) throw error;
             return count === 0;
         } catch (e) {
-            console.error('Error checking username:', e);
-            // If we can't check, assume available to avoid blocking (or handle differently)
-            return true;
+            Logger.error('Error checking username:', e);
+            // Return false on error to be conservative and prevent duplicates
+            return false;
         }
     }
 };

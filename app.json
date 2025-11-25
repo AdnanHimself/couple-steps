@@ -2,18 +2,21 @@
   "expo": {
     "name": "Couple Steps",
     "slug": "couple-steps-v2",
-    "version": "1.0.0",
+    "version": "2.9.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "We need access to your step count to track your daily activity and challenges with your partner.",
+        "NSHealthUpdateUsageDescription": "We need to update your health data."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,15 +26,26 @@
       "edgeToEdgeEnabled": true,
       "package": "com.couplesteps.v2",
       "permissions": [
-        "android.permission.ACTIVITY_RECOGNITION"
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.WRITE_STEPS"
       ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-web-browser",
-      "expo-health-connect"
+      "expo-health-connect",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ],
+      "expo-asset",
+      "expo-font"
     ],
     "extra": {
       "eas": {

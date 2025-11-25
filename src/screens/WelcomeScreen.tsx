@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, StatusBar, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Dimensions } from 'react-native';
 import PagerView from 'react-native-pager-view';
 import { Colors, Layout } from '../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,21 +20,18 @@ const ONBOARDING_DATA = [
         id: '1',
         title: 'Walk Together',
         subtitle: 'Sync your steps with your partner and stay connected, no matter the distance.',
-        image: 'https://images.unsplash.com/photo-1485217988980-11786ced9454?auto=format&fit=crop&w=800&q=80',
         icon: Heart,
     },
     {
         id: '2',
         title: 'Track Progress',
         subtitle: 'Visualize your daily activity and complete fun walking challenges together.',
-        image: 'https://images.unsplash.com/photo-1502904550040-7534597429ae?auto=format&fit=crop&w=800&q=80',
         icon: Footprints,
     },
     {
         id: '3',
         title: 'Stay Connected',
         subtitle: 'Send nudges, chat in real-time, and motivate each other to keep moving.',
-        image: 'https://images.unsplash.com/photo-1516726817505-f5ed825624d8?auto=format&fit=crop&w=800&q=80',
         icon: MessageCircle,
     },
 ];
@@ -54,7 +51,7 @@ export const WelcomeScreen = () => {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle="dark-content" />
             <PagerView
                 style={styles.pagerView}
                 initialPage={0}
@@ -63,27 +60,21 @@ export const WelcomeScreen = () => {
             >
                 {ONBOARDING_DATA.map((item, index) => (
                     <View key={item.id} style={styles.page}>
-                        <ImageBackground
-                            source={{ uri: item.image }}
-                            style={styles.background}
-                            resizeMode="cover"
-                        >
-                            <View style={styles.overlay} />
-                            <SafeAreaView style={styles.content}>
-                                <View style={styles.header}>
-                                    <View style={styles.iconContainer}>
-                                        <item.icon color={Colors.secondary} size={48} fill={Colors.secondary} />
-                                    </View>
-                                    <Text style={styles.title}>{item.title}</Text>
-                                    <Text style={styles.subtitle}>{item.subtitle}</Text>
+                        <SafeAreaView style={styles.content}>
+                            <Text style={styles.appTitle}>Couple Steps 👣</Text>
+                            <View style={styles.card}>
+                                <View style={styles.iconContainer}>
+                                    <item.icon color={Colors.black} size={64} />
                                 </View>
-                            </SafeAreaView>
-                        </ImageBackground>
+                                <Text style={styles.title}>{item.title}</Text>
+                                <Text style={styles.subtitle}>{item.subtitle}</Text>
+                            </View>
+                        </SafeAreaView>
                     </View>
                 ))}
             </PagerView>
 
-            {/* Footer Controls (Overlay) */}
+            {/* Footer Controls */}
             <View style={styles.footerContainer}>
                 {/* Pagination Dots */}
                 <View style={styles.pagination}>
@@ -116,7 +107,7 @@ export const WelcomeScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.background,
+        backgroundColor: Colors.white,
     },
     pagerView: {
         flex: 1,
@@ -124,47 +115,53 @@ const styles = StyleSheet.create({
     page: {
         flex: 1,
     },
-    background: {
-        flex: 1,
-    },
-    overlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(15, 23, 42, 0.7)', // Slightly lighter overlay
-    },
     content: {
         flex: 1,
         padding: Layout.padding,
+        paddingTop: 60,
+        justifyContent: 'flex-start',
         alignItems: 'center',
-        justifyContent: 'flex-start', // Push content to top
-        paddingTop: 100,
     },
-    header: {
+    card: {
+        backgroundColor: Colors.white,
+        borderWidth: 3,
+        borderColor: Colors.black,
+        borderRadius: 0,
+        padding: 48,
         alignItems: 'center',
+        width: '100%',
+        maxWidth: 400,
     },
     iconContainer: {
-        marginBottom: 30,
-        shadowColor: Colors.secondary,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.8,
-        shadowRadius: 20,
-        elevation: 10,
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        padding: 20,
-        borderRadius: 50,
+        marginBottom: 32,
+        padding: 24,
+        backgroundColor: Colors.white,
+        borderWidth: 3,
+        borderColor: Colors.black,
+        borderRadius: 0,
+    },
+    appTitle: {
+        fontSize: 32,
+        fontWeight: '800',
+        color: Colors.black,
+        marginBottom: 40,
+        textAlign: 'center',
+        letterSpacing: -0.5,
     },
     title: {
-        fontSize: 36,
-        fontWeight: 'bold',
-        color: Colors.white,
+        fontSize: 28,
+        fontWeight: '700',
+        color: Colors.black,
         marginBottom: 16,
         textAlign: 'center',
+        letterSpacing: -0.3,
     },
     subtitle: {
-        fontSize: 18,
-        color: 'rgba(255,255,255,0.8)',
+        fontSize: 17,
+        color: Colors.black,
         textAlign: 'center',
         lineHeight: 26,
-        paddingHorizontal: 20,
+        paddingHorizontal: 8,
     },
     footerContainer: {
         position: 'absolute',
@@ -176,34 +173,35 @@ const styles = StyleSheet.create({
     },
     pagination: {
         flexDirection: 'row',
-        marginBottom: 30,
-        gap: 10,
+        marginBottom: 24,
+        gap: 8,
     },
     dot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: 'rgba(255,255,255,0.3)',
+        width: 8,
+        height: 8,
+        borderRadius: 0,
+        backgroundColor: Colors.white,
+        borderWidth: 2,
+        borderColor: Colors.black,
     },
     activeDot: {
-        backgroundColor: Colors.primary,
-        width: 20, // Elongated active dot
+        backgroundColor: Colors.black,
+        width: 24,
     },
     button: {
-        backgroundColor: Colors.primary,
+        backgroundColor: Colors.black,
         paddingVertical: 18,
         width: '100%',
-        borderRadius: 30,
+        borderRadius: 0,
+        borderWidth: 3,
+        borderColor: Colors.black,
         alignItems: 'center',
-        shadowColor: Colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 5,
     },
     buttonText: {
         color: Colors.white,
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 17,
+        fontWeight: '700',
+        letterSpacing: 0.5,
+        textTransform: 'uppercase',
     },
 });

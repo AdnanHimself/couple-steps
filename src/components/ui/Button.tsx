@@ -1,6 +1,5 @@
 import React from 'react';
 import { Text, StyleSheet, TouchableOpacity, ActivityIndicator, ViewStyle, TextStyle, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, Layout } from '../../constants/Colors';
 
@@ -42,21 +41,15 @@ export const Button: React.FC<ButtonProps> = ({
         }).start();
     };
 
-    const getGradientColors = () => {
-        if (disabled) return [Colors.surfaceLight, Colors.surfaceLight];
-        switch (variant) {
-            case 'primary':
-                return Colors.gradients.primary;
-            case 'secondary':
-                return Colors.gradients.secondary;
-            default:
-                return Colors.gradients.card;
-        }
+    const getBackgroundColor = () => {
+        if (disabled) return Colors.white;
+        if (variant === 'outline' || variant === 'ghost') return 'transparent';
+        return Colors.black; // Primary and secondary both use black
     };
 
     const getTextColor = () => {
-        if (disabled) return Colors.textSecondary;
-        if (variant === 'outline' || variant === 'ghost') return Colors.primary;
+        if (disabled) return Colors.black;
+        if (variant === 'outline' || variant === 'ghost') return Colors.black;
         return Colors.white;
     };
 
@@ -79,27 +72,6 @@ export const Button: React.FC<ButtonProps> = ({
         </>
     );
 
-    if (variant === 'outline' || variant === 'ghost') {
-        return (
-            <Animated.View style={{ transform: [{ scale: scaleValue }], width: style?.width }}>
-                <TouchableOpacity
-                    onPress={onPress}
-                    onPressIn={handlePressIn}
-                    onPressOut={handlePressOut}
-                    disabled={disabled || loading}
-                    style={[
-                        styles.button,
-                        variant === 'outline' && styles.outline,
-                        disabled && styles.disabled,
-                        style
-                    ]}
-                >
-                    {content}
-                </TouchableOpacity>
-            </Animated.View>
-        );
-    }
-
     return (
         <Animated.View style={{ transform: [{ scale: scaleValue }], width: style?.width }}>
             <TouchableOpacity
@@ -108,47 +80,37 @@ export const Button: React.FC<ButtonProps> = ({
                 onPressOut={handlePressOut}
                 disabled={disabled || loading}
                 activeOpacity={0.9}
-                style={[styles.container, style]}
+                style={[
+                    styles.button,
+                    { backgroundColor: getBackgroundColor() },
+                    variant === 'outline' && styles.outline,
+                    disabled && styles.disabled,
+                    style
+                ]}
             >
-                <LinearGradient
-                    colors={getGradientColors() as any}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={[styles.button, disabled && styles.disabled]}
-                >
-                    {content}
-                </LinearGradient>
+                {content}
             </TouchableOpacity>
         </Animated.View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        borderRadius: 25,
-        shadowColor: Colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
-    },
     button: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 16,
         paddingHorizontal: 24,
-        borderRadius: 25,
+        borderRadius: 0, // Squared
         minHeight: 56,
     },
     outline: {
         backgroundColor: 'transparent',
         borderWidth: 1,
-        borderColor: Colors.primary,
+        borderColor: Colors.black,
     },
     disabled: {
-        opacity: 0.7,
-        shadowOpacity: 0,
+        opacity: 0.5,
     },
     text: {
         fontSize: 16,

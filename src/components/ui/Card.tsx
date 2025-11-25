@@ -1,6 +1,5 @@
 import React from 'react';
 import { StyleSheet, ViewStyle, StyleProp, TouchableOpacity, View, Animated } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Colors, Layout } from '../../constants/Colors';
 
@@ -33,16 +32,6 @@ export const Card: React.FC<CardProps> = ({ children, style, onPress, variant = 
         }
     };
 
-    const getGradientColors = () => {
-        switch (variant) {
-            case 'primary':
-                return Colors.gradients.primary;
-            case 'default':
-            default:
-                return Colors.gradients.card;
-        }
-    };
-
     if (variant === 'outlined') {
         if (onPress) {
             return (
@@ -71,20 +60,13 @@ export const Card: React.FC<CardProps> = ({ children, style, onPress, variant = 
         return (
             <Animated.View style={{ transform: [{ scale: scaleValue }], width: '100%' }}>
                 <TouchableOpacity
-                    style={[styles.container, style]}
+                    style={[styles.card, style]}
                     activeOpacity={0.9}
                     onPress={onPress}
                     onPressIn={handlePressIn}
                     onPressOut={handlePressOut}
                 >
-                    <LinearGradient
-                        colors={getGradientColors() as any}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.card}
-                    >
-                        {children}
-                    </LinearGradient>
+                    {children}
                 </TouchableOpacity>
             </Animated.View>
         );
@@ -92,35 +74,20 @@ export const Card: React.FC<CardProps> = ({ children, style, onPress, variant = 
 
     return (
         // @ts-ignore
-        <View style={[styles.container, style]}>
-            <LinearGradient
-                colors={getGradientColors() as any}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.card}
-            >
-                {children}
-            </LinearGradient>
+        <View style={[styles.card, style]}>
+            {children}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        borderRadius: Layout.borderRadius,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        elevation: 4,
-    },
     card: {
+        backgroundColor: Colors.card,
         borderRadius: Layout.borderRadius,
         padding: 20,
         width: '100%',
+        borderWidth: 1,
+        borderColor: Colors.border,
     },
     outlined: {
         backgroundColor: 'transparent',

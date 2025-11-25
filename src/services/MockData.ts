@@ -1,4 +1,4 @@
-import { User, Challenge, StepLog, Message } from '../types';
+import { User, Challenge, StepLog } from '../types';
 
 const USERS: User[] = [
     { id: 'u1', username: 'Alex', avatarUrl: 'https://i.pravatar.cc/150?u=alex', color: '#4F46E5' },
@@ -10,6 +10,7 @@ const CHALLENGES: Challenge[] = [
         id: 'c1',
         title: 'Great Wall of China',
         goal: 200000,
+        type: 'couple',
         description: 'Walk the length of the Great Wall!',
         imageUrl: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?auto=format&fit=crop&w=800&q=80',
         durationDays: 30,
@@ -23,6 +24,7 @@ const CHALLENGES: Challenge[] = [
         id: 'c2',
         title: 'Berlin to Rome',
         goal: 1500000,
+        type: 'couple',
         description: 'A romantic journey across Europe.',
         imageUrl: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=800&q=80',
         durationDays: 90,
@@ -42,14 +44,10 @@ const INITIAL_STEPS: StepLog[] = [
     { date: '2023-10-26', userId: 'u2', count: 9500 },
 ];
 
-const INITIAL_MESSAGES: Message[] = [
-    { id: 'm1', senderId: 'u2', text: 'Ready for our walk today?', timestamp: Date.now() - 100000 },
-    { id: 'm2', senderId: 'u1', text: 'Yes! Let\'s hit 10k.', timestamp: Date.now() - 50000 },
-];
-
 export const MockService = {
     getUsers: () => Promise.resolve(USERS),
     getChallenges: () => Promise.resolve(CHALLENGES),
-    getSteps: () => Promise.resolve(INITIAL_STEPS),
-    getMessages: () => Promise.resolve(INITIAL_MESSAGES),
+    getSteps: (userId: string) => {
+        return Promise.resolve(INITIAL_STEPS.filter(s => s.userId === userId));
+    },
 };

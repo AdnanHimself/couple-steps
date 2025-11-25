@@ -31,7 +31,7 @@ export const NudgeModal: React.FC<NudgeModalProps> = ({
                 <View style={styles.modalContainer}>
                     {/* Close Button */}
                     <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                        <X color={Colors.textSecondary} size={20} />
+                        <X color={Colors.black} size={20} />
                     </TouchableOpacity>
 
                     {/* Heart Icon */}
@@ -73,16 +73,16 @@ const styles = StyleSheet.create({
     },
     modalContainer: {
         backgroundColor: Colors.surface,
-        borderRadius: Layout.borderRadius * 2,
+        borderRadius: 0,
         padding: 32,
         width: width * 0.85,
         maxWidth: 400,
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 10,
+        // shadowColor: '#000',
+        // shadowOffset: { width: 0, height: 10 },
+        // shadowOpacity: 0.3,
+        // shadowRadius: 20,
+        // elevation: 10,
         borderWidth: 1,
         borderColor: Colors.border,
     },
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     iconContainer: {
         width: 80,
         height: 80,
-        borderRadius: 40,
+        borderRadius: 0,
         backgroundColor: `${Colors.primary}20`,
         justifyContent: 'center',
         alignItems: 'center',
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     },
     message: {
         fontSize: 16,
-        color: Colors.textSecondary,
+        color: Colors.black,
         textAlign: 'center',
         marginBottom: 28,
         lineHeight: 22,
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.primary,
         paddingVertical: 16,
         paddingHorizontal: 32,
-        borderRadius: Layout.borderRadius,
+        borderRadius: 0,
         width: '100%',
         gap: 10,
     },

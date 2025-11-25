@@ -1,34 +1,38 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Platform, Dimensions } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform, Dimensions, Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { StatsScreen } from '../screens/StatsScreen';
-import { ChatScreen } from '../screens/ChatScreen';
 import { AccountScreen } from '../screens/AccountScreen';
 import { WelcomeScreen } from '../screens/WelcomeScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { CouplingScreen } from '../screens/CouplingScreen';
 import { ChallengeSelectionScreen } from '../screens/ChallengeSelectionScreen';
 import { Colors, Layout } from '../constants/Colors';
-import { LayoutDashboard, BarChart3, MessageCircle, User as UserIcon } from 'lucide-react-native';
+import { LayoutDashboard, BarChart3, User as UserIcon } from 'lucide-react-native';
 import { useApp } from '../context/AppContext';
-import { LinearGradient } from 'expo-linear-gradient';
+
+export type RootStackParamList = {
+    Main: undefined;
+    Coupling: undefined;
+    ChallengeSelection: undefined;
+    Welcome: undefined;
+    Auth: undefined;
+    MainTabs: undefined;
+};
 
 const Tab = createMaterialTopTabNavigator();
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const CustomTabBar = ({ state, descriptors, navigation }: any) => {
+import { MaterialTopTabBarProps } from '@react-navigation/material-top-tabs';
+
+const CustomTabBar = ({ state, descriptors, navigation }: MaterialTopTabBarProps) => {
     return (
         <View style={styles.tabBarContainer}>
-            <LinearGradient
-                colors={Colors.gradients.card as any}
-                style={styles.tabBar}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-            >
-                {state.routes.map((route: any, index: number) => {
+            <View style={styles.tabBar}>
+                {state.routes.map((route, index) => {
                     const { options } = descriptors[route.key];
                     const isFocused = state.index === index;
 
@@ -48,6 +52,7 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
                     };
 
                     const Icon = options.tabBarIcon;
+                    const label = options.tabBarLabel;
 
                     return (
                         <TouchableOpacity
@@ -55,19 +60,26 @@ const CustomTabBar = ({ state, descriptors, navigation }: any) => {
                             accessibilityRole="button"
                             accessibilityState={isFocused ? { selected: true } : {}}
                             accessibilityLabel={options.tabBarAccessibilityLabel}
-                            testID={options.tabBarTestID}
                             onPress={onPress}
                             style={styles.tabItem}
                             activeOpacity={0.7}
                         >
                             <View style={[styles.iconContainer, isFocused && styles.activeIconContainer]}>
-                                {Icon && <Icon color={isFocused ? Colors.white : Colors.textSecondary} size={24} />}
-                                {isFocused && <View style={styles.activeDot} />}
+                                {Icon && <Icon focused={isFocused} color={isFocused ? Colors.black : 'rgba(255,255,255,0.4)'} />}
                             </View>
+                            <Text style={{
+                                color: isFocused ? Colors.white : 'rgba(255, 255, 255, 0.4)',
+                                fontSize: 10,
+                                fontWeight: isFocused ? 'bold' : 'normal',
+                                marginBottom: 10, // Raise title
+                                marginTop: 4,
+                            }}>
+                                {typeof label === 'string' ? label : route.name}
+                            </Text>
                         </TouchableOpacity>
                     );
                 })}
-            </LinearGradient>
+            </View>
         </View>
     );
 };
@@ -89,6 +101,7 @@ const MainTabs = () => {
                 name="Dashboard"
                 component={DashboardScreen}
                 options={{
+                    tabBarLabel: "Dashboard",
                     tabBarIcon: ({ color }) => <LayoutDashboard color={color} size={24} />,
                 }}
             />
@@ -96,20 +109,15 @@ const MainTabs = () => {
                 name="Stats"
                 component={StatsScreen}
                 options={{
+                    tabBarLabel: "Stats",
                     tabBarIcon: ({ color }) => <BarChart3 color={color} size={24} />,
-                }}
-            />
-            <Tab.Screen
-                name="Chat"
-                component={ChatScreen}
-                options={{
-                    tabBarIcon: ({ color }) => <MessageCircle color={color} size={24} />,
                 }}
             />
             <Tab.Screen
                 name="Account"
                 component={AccountScreen}
                 options={{
+                    tabBarLabel: "Account",
                     tabBarIcon: ({ color }) => <UserIcon color={color} size={24} />,
                 }}
             />
@@ -142,6 +150,7 @@ export const AppNavigator = () => {
                             presentation: 'transparentModal',
                             animation: 'fade',
                             headerShown: false,
+                            contentStyle: { backgroundColor: 'transparent' }
                         }}
                     />
                     <Stack.Screen
@@ -151,6 +160,7 @@ export const AppNavigator = () => {
                             presentation: 'transparentModal',
                             animation: 'fade',
                             headerShown: false,
+                            contentStyle: { backgroundColor: 'transparent' }
                         }}
                     />
                 </>
@@ -167,31 +177,24 @@ export const AppNavigator = () => {
 const styles = StyleSheet.create({
     tabBarContainer: {
         position: 'absolute',
-        bottom: Platform.OS === 'ios' ? 30 : 20,
-        left: 20,
-        right: 20,
+        bottom: 0, // Moved to bottom 0 for squared design usually, but user asked for specific style. Keeping it absolute but maybe adjusting bottom if needed. 
+        // Actually, for a squared bar that looks like a standard tab bar, bottom 0 is better.
+        // But previous design had it floating. User asked for squared corners.
+        // Let's stick to the previous positioning but remove radius.
+        left: 0,
+        right: 0,
         alignItems: 'center',
     },
     tabBar: {
         flexDirection: 'row',
-        backgroundColor: 'rgba(30, 30, 30, 0.8)',
-        borderRadius: 35,
-        height: 70,
+        backgroundColor: Colors.black,
+        borderRadius: 0, // Squared
+        height: 110, // Increased height for more icon spacing
         width: '100%',
         justifyContent: 'space-around',
         alignItems: 'center',
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 10,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        elevation: 10,
         paddingHorizontal: 10,
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
-        overflow: 'hidden',
+        paddingBottom: 30, // More padding for better spacing from bottom
     },
     tabItem: {
         flex: 1,
@@ -202,26 +205,15 @@ const styles = StyleSheet.create({
     iconContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: 'transparent',
+        width: 40,
+        height: 40,
     },
     activeIconContainer: {
-        backgroundColor: 'rgba(220, 38, 38, 0.2)',
-        borderWidth: 2,
-        borderColor: Colors.primary,
-        borderRadius: 28,
-        transform: [{ scale: 1.05 }],
+        backgroundColor: Colors.white, // White square background
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+        // borderRadius: 0 is default for View, so it's a square
     },
-    activeDot: {
-        position: 'absolute',
-        bottom: -8,
-        width: 4,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: Colors.white,
-        display: 'none',
-    }
 });
-

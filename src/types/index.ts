@@ -7,12 +7,12 @@
 
 /**
  * User Interface
- * Represents a user in the app (either the current user or their partner)
+ * Represents a user in the app (either the current user or their partner).
  * 
- * @property id - Unique identifier from Supabase Auth (UUID)
- * @property name - Display name of the user
- * @property avatarUrl - URL to the user's profile picture
- * @property color - Personalized color for the user (used in UI elements like progress rings)
+ * @property id - Unique identifier from Supabase Auth (UUID).
+ * @property username - Display name or handle chosen by the user.
+ * @property avatarUrl - URL to the user's profile picture (remote image).
+ * @property color - Personalized color hex code (e.g., "#FF5733") used for UI accents.
  */
 export interface User {
     id: string;
@@ -23,17 +23,17 @@ export interface User {
 
 /**
  * Challenge Interface
- * Represents a step challenge that couples can participate in
+ * Represents a step challenge definition that users or couples can participate in.
  * 
- * @property id - Unique identifier for the challenge
- * @property title - Display name (e.g., "Great Wall of China")
- * @property goal - Total number of steps required to complete the challenge
- * @property description - Brief explanation of the challenge
- * @property imageUrl - Background image for the challenge card
- * @property durationDays - Suggested duration in days
- * @property milestones - Array of milestone markers throughout the challenge
- * 
- * Note: Changed from 'name' to 'title' and 'totalSteps' to 'goal' to match database schema
+ * @property id - Unique identifier for the challenge (UUID).
+ * @property title - The display title of the challenge (e.g., "Everest Hike").
+ * @property goal - The target number of steps required to complete this challenge.
+ * @property description - A short, motivating description of the challenge.
+ * @property imageUrl - URL for the background image displayed on the challenge card.
+ * @property durationDays - Recommended duration to complete the challenge (in days).
+ * @property milestones - List of intermediate checkpoints (Milestone objects).
+ * @property completedDate - (Optional) ISO date string of when the challenge was finished.
+ * @property type - Categorization: 'solo' for individual, 'couple' for shared goals.
  */
 export interface Challenge {
     id: string;
@@ -44,6 +44,32 @@ export interface Challenge {
     durationDays: number;
     milestones: Milestone[];
     completedDate?: string;
+    type: 'solo' | 'couple';
+}
+
+/**
+ * UserChallenge Interface
+ * Represents the link between a user and a specific challenge they are actively working on.
+ * This tracks the progress and status of a specific instance of a challenge.
+ * 
+ * @property id - Unique identifier for this user-challenge record (UUID).
+ * @property userId - The UUID of the user participating in this challenge.
+ * @property challengeId - The UUID of the challenge definition being attempted.
+ * @property status - Current state: 'active' (in progress), 'completed' (finished), or 'paused'.
+ * @property startDate - ISO date string of when the user started this challenge.
+ * @property endDate - (Optional) ISO date string of when the challenge was completed.
+ * @property progress - Current number of steps contributed towards this challenge.
+ * @property challenge - (Optional) The full Challenge object details (joined data).
+ */
+export interface UserChallenge {
+    id: string;
+    userId: string;
+    challengeId: string;
+    status: 'active' | 'completed' | 'paused';
+    startDate: string;
+    endDate?: string;
+    progress: number;
+    challenge?: Challenge;
 }
 
 /**
@@ -74,35 +100,25 @@ export interface StepLog {
     count: number;
 }
 
-/**
- * Message Interface
- * Represents a chat message between partners
- * 
- * @property id - Unique identifier for the message
- * @property senderId - ID of the user who sent the message
- * @property text - Content of the message
- * @property timestamp - Unix timestamp (milliseconds) when the message was sent
- * 
- * Note: Messages are stored in Supabase and synced in real-time
- */
-export interface Message {
+
+
+export interface DBChallenge {
     id: string;
-    senderId: string;
-    text: string;
-    timestamp: number;
+    title?: string;
+    name?: string;
+    description: string;
+    goal: number;
+    image_url: string;
+    duration_days?: number;
+    milestones?: Milestone[];
+    type?: 'solo' | 'couple';
+    created_at?: string;
 }
 
-/**
- * AppState Interface (Currently unused)
- * Originally defined the global app state structure
- * 
- * Note: We use React Context (AppContext) for state management instead.
- * This interface is kept for reference but not actively used.
- */
-export interface AppState {
-    currentUser: User;
-    partner: User;
-    challenge: Challenge;
-    steps: StepLog[];
-    messages: Message[];
+export interface DBStepLog {
+    id: string;
+    user_id: string;
+    date: string;
+    count: number;
+    updated_at: string;
 }

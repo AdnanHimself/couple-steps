@@ -10,9 +10,16 @@ import { CouplingService } from '../services/CouplingService';
 import { Colors, Layout } from '../constants/Colors';
 import { LinearGradient } from 'expo-linear-gradient';
 
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { BarcodeScanningResult } from 'expo-camera';
+
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export const CouplingScreen = ({ navigation }: any) => {
+type CouplingScreenProps = {
+    navigation: NativeStackNavigationProp<any>;
+};
+
+export const CouplingScreen = ({ navigation }: CouplingScreenProps) => {
     const [mode, setMode] = useState<'select' | 'generate' | 'scan'>('select');
     const { currentUser } = useApp();
     const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -70,7 +77,7 @@ export const CouplingScreen = ({ navigation }: any) => {
         getPermissions();
     }, []);
 
-    const handleBarCodeScanned = async ({ type, data }: any) => {
+    const handleBarCodeScanned = async ({ type, data }: BarcodeScanningResult) => {
         setScanned(true);
         try {
             const partnerId = data;
@@ -89,12 +96,12 @@ export const CouplingScreen = ({ navigation }: any) => {
                         text: 'Link',
                         onPress: async () => {
                             if (currentUser) {
-                                const success = await CouplingService.linkPartners(currentUser.id, partnerId);
-                                if (success) {
+                                const result = await CouplingService.linkPartners(currentUser.id, partnerId);
+                                if (result.success) {
                                     Alert.alert('Success', 'You are now linked! 🎉');
                                     navigation.replace('Main');
                                 } else {
-                                    Alert.alert('Error', 'Could not link. You might already have a partner.');
+                                    Alert.alert('Error', result.error || 'Could not link partners.');
                                     setScanned(false);
                                 }
                             }
@@ -142,7 +149,7 @@ export const CouplingScreen = ({ navigation }: any) => {
                             <QRCode
                                 value={currentUser.id}
                                 size={200}
-                                color={Colors.background}
+                                color="black"
                                 backgroundColor="white"
                             />
                         ) : (
@@ -195,7 +202,7 @@ export const CouplingScreen = ({ navigation }: any) => {
             >
                 <View style={styles.handle} />
                 <TouchableOpacity style={styles.closeButton} onPress={close}>
-                    <X color={Colors.textSecondary} size={24} />
+                    <X color={Colors.black} size={24} />
                 </TouchableOpacity>
                 {renderContent()}
             </Animated.View>
@@ -214,17 +221,19 @@ const styles = StyleSheet.create({
     },
     sheet: {
         backgroundColor: Colors.background,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
+        borderTopLeftRadius: 0, // Squared
+        borderTopRightRadius: 0, // Squared
         height: '85%',
         padding: Layout.padding,
         paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: Colors.black,
     },
     handle: {
         width: 40,
         height: 4,
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        borderRadius: 2,
+        backgroundColor: Colors.black,
+        borderRadius: 0, // Squared
         alignSelf: 'center',
         marginBottom: 20,
         marginTop: 10,
@@ -248,7 +257,7 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: 16,
-        color: Colors.textSecondary,
+        color: Colors.black,
         marginBottom: 30,
     },
     optionCard: {
@@ -256,11 +265,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: Colors.card,
         padding: 20,
-        borderRadius: 16,
+        borderRadius: 0, // Squared
         width: '100%',
         marginBottom: 16,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.05)',
+        borderColor: Colors.black,
     },
     optionTextContainer: {
         marginLeft: 16,
@@ -274,16 +283,18 @@ const styles = StyleSheet.create({
     },
     optionDesc: {
         fontSize: 14,
-        color: Colors.textSecondary,
+        color: Colors.black,
     },
     qrContainer: {
         padding: 20,
         backgroundColor: '#FFF',
-        borderRadius: 20,
+        borderRadius: 0, // Squared
         marginBottom: 20,
+        borderWidth: 1,
+        borderColor: Colors.black,
     },
     instruction: {
-        color: Colors.textSecondary,
+        color: Colors.black,
         fontSize: 16,
         marginBottom: 30,
     },
@@ -291,13 +302,15 @@ const styles = StyleSheet.create({
         padding: 10,
     },
     textButtonLabel: {
-        color: Colors.textSecondary,
+        color: Colors.black,
         fontSize: 16,
     },
     scanContainer: {
         flex: 1,
-        borderRadius: 16,
+        borderRadius: 0, // Squared
         overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: Colors.black,
         marginTop: 10,
     },
     scanOverlay: {
@@ -311,7 +324,7 @@ const styles = StyleSheet.create({
         height: 250,
         borderWidth: 2,
         borderColor: Colors.primary,
-        borderRadius: 20,
+        borderRadius: 0,
         backgroundColor: 'transparent',
     },
     scanText: {
@@ -321,7 +334,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0,0.6)',
         paddingHorizontal: 16,
         paddingVertical: 8,
-        borderRadius: 20,
+        borderRadius: 0,
         overflow: 'hidden',
     },
     backButtonOverlay: {
@@ -329,7 +342,7 @@ const styles = StyleSheet.create({
         bottom: 40,
         padding: 15,
         backgroundColor: 'rgba(0,0,0,0.6)',
-        borderRadius: 25,
+        borderRadius: 0,
     },
     backText: {
         color: '#FFF',

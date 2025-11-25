@@ -11,8 +11,9 @@ import { Card } from '../components/ui/Card';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export const ChallengeSelectionScreen = () => {
-    const { challenges, activeChallenge, setActiveChallenge } = useApp();
+    const { challenges, activeChallenge, activeSoloChallenge, setActiveChallenge, setActiveSoloChallenge, isSolo } = useApp();
     const navigation = useNavigation();
+    const [mode, setMode] = React.useState<'couple' | 'solo'>(isSolo ? 'solo' : 'couple');
 
     // Animation
     const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
@@ -36,7 +37,7 @@ export const ChallengeSelectionScreen = () => {
 
     const panResponder = useRef(
         PanResponder.create({
-            onStartShouldSetPanResponder: () => true,
+            onStartShouldSetPanResponder: () => false,
             onMoveShouldSetPanResponder: (_, gestureState) => {
                 return gestureState.dy > 5; // Only capture downward movement
             },
@@ -59,7 +60,8 @@ export const ChallengeSelectionScreen = () => {
     ).current;
 
     const handleSelect = (challenge: Challenge) => {
-        if (activeChallenge?.id === challenge.id) return;
+        const currentActive = mode === 'couple' ? activeChallenge : activeSoloChallenge;
+        if (currentActive?.id === challenge.id) return;
 
         Alert.alert(
             'Start Challenge',
@@ -70,7 +72,15 @@ export const ChallengeSelectionScreen = () => {
                     text: 'Start',
                     style: 'default',
                     onPress: async () => {
-                        await setActiveChallenge(challenge);
+                        if (mode === 'couple') {
+                            if (isSolo) {
+                                Alert.alert('Partner Required', 'You need a partner to start a couple challenge!');
+                                return;
+                            }
+                            await setActiveChallenge(challenge);
+                        } else {
+                            await setActiveSoloChallenge(challenge);
+                        }
                         close();
                     }
                 }
@@ -78,19 +88,21 @@ export const ChallengeSelectionScreen = () => {
         );
     };
 
+    const filteredChallenges = challenges.filter(c => c.type === mode);
+
     const renderItem = ({ item }: { item: Challenge }) => {
-        const isActive = activeChallenge?.id === item.id;
+        const currentActive = mode === 'couple' ? activeChallenge : activeSoloChallenge;
+        const isActive = currentActive?.id === item.id;
 
         return (
             <Card
-                variant={isActive ? "primary" : "default"}
                 onPress={() => handleSelect(item)}
-                style={styles.card}
+                style={[styles.card, isActive && styles.activeCard]}
             >
                 <View style={styles.cardHeader}>
                     <Zap
                         size={24}
-                        color={isActive ? Colors.warning : Colors.textSecondary}
+                        color={isActive ? Colors.warning : Colors.black}
                         fill={isActive ? Colors.warning : 'transparent'}
                     />
                     <Text style={[styles.title, isActive && styles.activeTitle]}>{item.title}</Text>
@@ -108,7 +120,7 @@ export const ChallengeSelectionScreen = () => {
                 </Text>
 
                 <View style={styles.footer}>
-                    <Footprints color={isActive ? Colors.white : Colors.textSecondary} size={18} />
+                    <Footprints color={isActive ? Colors.white : Colors.black} size={18} />
                     <Text style={[styles.steps, isActive && styles.activeSteps]}>
                         {item.goal.toLocaleString()} steps
                     </Text>
@@ -136,12 +148,28 @@ export const ChallengeSelectionScreen = () => {
                 <View style={styles.header}>
                     <Text style={styles.screenTitle}>Select Challenge</Text>
                     <TouchableOpacity style={styles.closeButton} onPress={close}>
-                        <X color={Colors.textSecondary} size={24} />
+                        <X color={Colors.black} size={24} />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Tabs */}
+                <View style={styles.tabs}>
+                    <TouchableOpacity
+                        style={[styles.tab, mode === 'couple' && styles.activeTab]}
+                        onPress={() => setMode('couple')}
+                    >
+                        <Text style={[styles.tabText, mode === 'couple' && styles.activeTabText]}>Couple</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.tab, mode === 'solo' && styles.activeTab]}
+                        onPress={() => setMode('solo')}
+                    >
+                        <Text style={[styles.tabText, mode === 'solo' && styles.activeTabText]}>Solo</Text>
                     </TouchableOpacity>
                 </View>
 
                 <FlatList
-                    data={challenges}
+                    data={filteredChallenges}
                     renderItem={renderItem}
                     keyExtractor={item => item.id}
                     contentContainerStyle={styles.list}
@@ -163,8 +191,8 @@ const styles = StyleSheet.create({
     },
     sheet: {
         backgroundColor: Colors.background,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0,
         height: '85%',
         paddingTop: 10,
     },
@@ -172,7 +200,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 4,
         backgroundColor: 'rgba(255,255,255,0.1)',
-        borderRadius: 2,
+        borderRadius: 0,
         alignSelf: 'center',
         marginBottom: 10,
         marginTop: 10,
@@ -200,6 +228,14 @@ const styles = StyleSheet.create({
     },
     card: {
         marginBottom: 20,
+        backgroundColor: Colors.white,
+        borderRadius: 0,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: Colors.black,
+    },
+    activeCard: {
+        backgroundColor: Colors.black,
     },
     cardHeader: {
         flexDirection: 'row',
@@ -220,7 +256,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255,255,255,0.2)',
         paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 12,
+        borderRadius: 0,
     },
     badgeText: {
         color: Colors.white,
@@ -233,7 +269,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     description: {
-        color: Colors.textSecondary,
+        color: Colors.black,
         fontSize: 15,
         marginBottom: 12,
         lineHeight: 22,
@@ -247,7 +283,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     steps: {
-        color: Colors.textSecondary,
+        color: Colors.black,
         fontWeight: '600',
         fontSize: 14,
     },
@@ -255,10 +291,37 @@ const styles = StyleSheet.create({
         color: Colors.white,
     },
     duration: {
-        color: Colors.textSecondary,
+        color: Colors.black,
         fontSize: 14,
     },
     activeDuration: {
         color: 'rgba(255,255,255,0.8)',
+    },
+    tabs: {
+        flexDirection: 'row',
+        paddingHorizontal: Layout.padding,
+        paddingBottom: 10,
+        gap: 10,
+        marginTop: 10,
+    },
+    tab: {
+        flex: 1,
+        paddingVertical: 10,
+        alignItems: 'center',
+        borderRadius: 0, // Squared
+        backgroundColor: Colors.white,
+        borderWidth: 1,
+        borderColor: Colors.black,
+    },
+    activeTab: {
+        backgroundColor: Colors.black,
+    },
+    tabText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: Colors.black,
+    },
+    activeTabText: {
+        color: Colors.white,
     },
 });

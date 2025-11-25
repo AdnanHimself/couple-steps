@@ -1,26 +1,78 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, Image, ScrollView } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Switch } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // @ts-ignore
-import { LogOut, Smile as UserIcon, CircleUser, Database, ChevronRight } from 'lucide-react-native';
+import { LogOut, User, ChevronRight, Activity, Unplug, Bug, Trash2, MessageSquare } from 'lucide-react-native';
 import { supabase } from '../lib/supabase';
 import { useApp } from '../context/AppContext';
 import { CouplingService } from '../services/CouplingService';
 import { Colors, Layout } from '../constants/Colors';
-import { EditProfileModal } from '../components/EditProfileModal';
+import { DebugStatusSheet } from '../components/DebugStatusSheet';
+import { PartnerProfileSheet } from '../components/PartnerProfileSheet';
+import { FeedbackSheet } from '../components/FeedbackSheet';
 
 export const AccountScreen = () => {
-    const { currentUser, partner } = useApp();
-    const navigation = useNavigation<any>();
+    const { currentUser, partner, steps, isPartnerActive } = useApp();
     const [userEmail, setUserEmail] = useState<string>('');
-    const [editProfileVisible, setEditProfileVisible] = useState(false);
+    const [debugSheetVisible, setDebugSheetVisible] = useState(false);
+
+    // Partner Profile State
+    const [showPartnerSheet, setShowPartnerSheet] = useState(false);
+    const [partnerCompletedChallenges, setPartnerCompletedChallenges] = useState(0);
+
+    // Feedback State
+    const [showFeedbackSheet, setShowFeedbackSheet] = useState(false);
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data }) => {
             if (data.user?.email) setUserEmail(data.user.email);
         });
     }, []);
+
+
+
+    // Fetch partner completed challenges count
+    useEffect(() => {
+        if (!partner) return;
+        const fetchCompleted = async () => {
+            const { count } = await supabase
+                .from('user_challenges')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', partner.id)
+                .eq('status', 'completed');
+            setPartnerCompletedChallenges(count || 0);
+        };
+        fetchCompleted();
+    }, [partner]);
+
+    const partnerSteps = useMemo(() => {
+        if (!partner) return 0;
+        const today = new Date().toISOString().split('T')[0];
+        return steps.find(s => s.userId === partner.id && s.date === today)?.count || 0;
+    }, [steps, partner]);
+
+    const partnerHighestStreak = useMemo(() => {
+        if (!partner) return 0;
+        let maxStreak = 0;
+        let currentTempStreak = 0;
+        const today = new Date();
+
+        for (let i = 0; i < 30; i++) {
+            const checkDate = new Date(today);
+            checkDate.setDate(checkDate.getDate() - i);
+            const dateStr = checkDate.toISOString().split('T')[0];
+            const hasSteps = steps.some(s => s.userId === partner.id && s.date === dateStr && s.count > 0);
+
+            if (hasSteps) {
+                currentTempStreak++;
+                maxStreak = Math.max(maxStreak, currentTempStreak);
+            } else {
+                currentTempStreak = 0;
+            }
+        }
+        return maxStreak;
+    }, [steps, partner]);
 
     const handleSignOut = async () => {
         const { error } = await supabase.auth.signOut();
@@ -51,108 +103,133 @@ export const AccountScreen = () => {
         );
     };
 
-    const handleSeed = async () => {
-        try {
-            const { SeedService } = require('../services/SeedService');
-            const success = await SeedService.seedChallenges();
-            if (success) {
-                Alert.alert('Success', 'Real challenges have been seeded! Pull to refresh or restart the app.');
-            } else {
-                Alert.alert('Error', 'Failed to seed challenges.');
-            }
-        } catch (e) {
-            console.error(e);
-            Alert.alert('Error', 'Failed to seed challenges.');
-        }
-    };
+    const renderListItem = (icon: React.ReactNode, title: string, subtitle?: string, onPress?: () => void, showChevron = true, isDestructive = false) => (
+        <TouchableOpacity
+            style={styles.listItem}
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
+            <View style={styles.listItemContent}>
+                <View style={styles.iconContainer}>
+                    {icon}
+                </View>
+                <View style={styles.textContainer}>
+                    <Text style={[styles.itemTitle, isDestructive && styles.destructiveText]}>{title}</Text>
+                    {subtitle && <Text style={styles.itemSubtitle}>{subtitle}</Text>}
+                </View>
+                {showChevron && <ChevronRight size={20} color={Colors.black} />}
+            </View>
+        </TouchableOpacity>
+    );
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>Account</Text>
-                <Text style={styles.subtitle}>Stacked Steps</Text>
+                <Text style={styles.subtitle}>Manage Your Profile</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
                 {/* Profile Section */}
-                <View style={styles.card}>
-                    <View style={styles.profileHeader}>
-                        {currentUser?.avatarUrl ? (
-                            <Image source={{ uri: currentUser.avatarUrl }} style={styles.avatar} />
-                        ) : (
-                            <View style={[styles.avatar, { justifyContent: 'center', alignItems: 'center' }]}>
-                                <CircleUser size={32} color="#FFF" />
-                            </View>
-                        )}
+                <View style={styles.section}>
+                    <Text style={styles.sectionHeader}>PROFILE</Text>
+                    <View style={styles.profileCard}>
+                        <View style={styles.avatarPlaceholder}>
+                            <User size={32} color={Colors.white} />
+                        </View>
                         <View>
-                            <Text style={styles.name}>{currentUser?.username || 'User'}</Text>
-                            <Text style={styles.email}>{userEmail}</Text>
+                            <Text style={styles.profileName}>{currentUser?.username || 'User'}</Text>
+                            <Text style={styles.profileEmail}>{userEmail}</Text>
                         </View>
                     </View>
-                    {/* TODO: Add Edit Profile Button here when ready */}
-                    {/* <TouchableOpacity onPress={() => setEditProfileVisible(true)}><Text>Edit</Text></TouchableOpacity> */}
                 </View>
 
                 {/* Partner Section */}
-                <Text style={styles.sectionTitle}>Partner Connection</Text>
-                <View style={styles.card}>
+                <View style={styles.section}>
+                    <Text style={styles.sectionHeader}>PARTNER</Text>
                     {partner ? (
-                        <View style={styles.partnerRow}>
+                        <TouchableOpacity
+                            style={styles.partnerCard}
+                            onPress={() => setShowPartnerSheet(true)}
+                            activeOpacity={0.9}
+                        >
                             <View style={styles.partnerInfo}>
-                                <Image source={{ uri: partner.avatarUrl }} style={styles.partnerAvatar} />
-                                <View>
-                                    <Text style={styles.partnerName}>{partner.username}</Text>
-                                    <Text style={styles.partnerStatus}>Connected ❤️</Text>
+                                <View style={styles.partnerLabelRow}>
+                                    <Text style={styles.partnerLabel}>Connected with</Text>
+                                    {isPartnerActive && (
+                                        <View style={styles.activeDot} />
+                                    )}
                                 </View>
+                                <Text style={styles.partnerName}>{partner.username}</Text>
                             </View>
                             <TouchableOpacity style={styles.disconnectButton} onPress={handleDisconnect}>
-                                <Text style={{ color: Colors.danger }}>Disconnect</Text>
+                                <Unplug size={20} color={Colors.white} />
                             </TouchableOpacity>
-                        </View>
+                        </TouchableOpacity>
                     ) : (
-                        <View style={styles.noPartnerState}>
-                            <Text style={styles.noPartnerText}>No partner connected yet.</Text>
-                            <TouchableOpacity
-                                style={styles.connectButton}
-                                onPress={() => navigation.navigate('Coupling')}
-                            >
-                                <UserIcon size={20} color="#FFF" style={{ marginRight: 8 }} />
-                                <Text style={styles.connectButtonText}>Connect Partner</Text>
-                            </TouchableOpacity>
+                        <View style={styles.emptyPartner}>
+                            <Text style={styles.emptyPartnerText}>No partner connected</Text>
                         </View>
                     )}
                 </View>
 
-                {/* Developer Tools */}
-                <Text style={styles.sectionTitle}>Developer Tools</Text>
-                <View style={styles.card}>
-                    <TouchableOpacity style={styles.actionRow} onPress={handleSeed} activeOpacity={0.7}>
-                        <View style={[styles.actionIcon, { backgroundColor: Colors.primary }]}>
-                            <Database size={20} color="#FFF" />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.actionText}>Seed Real Challenges</Text>
-                            <Text style={styles.actionSubtext}>Reset and populate database</Text>
-                        </View>
-                        <ChevronRight size={20} color={Colors.textSecondary} />
-                    </TouchableOpacity>
+                {/* Settings List */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionHeader}>SETTINGS</Text>
+                    <View style={styles.listContainer}>
+                        {renderListItem(
+                            <Bug size={20} color={Colors.black} />,
+                            'Debug Menu',
+                            'View logs and system status',
+                            () => setDebugSheetVisible(true)
+                        )}
+                        {renderListItem(
+                            <MessageSquare size={20} color={Colors.black} />,
+                            'Send Feedback',
+                            'Report bugs or suggest features',
+                            () => setShowFeedbackSheet(true)
+                        )}
+                    </View>
                 </View>
 
-                {/* Settings / Actions */}
-                <Text style={styles.sectionTitle}>Settings</Text>
-                <View style={styles.card}>
-                    <TouchableOpacity style={styles.actionRow} onPress={handleSignOut} activeOpacity={0.7}>
-                        <View style={styles.actionIcon}>
-                            <LogOut size={20} color={Colors.danger} />
-                        </View>
-                        <Text style={[styles.actionText, { color: Colors.danger }]}>Sign Out</Text>
-                    </TouchableOpacity>
+                {/* Danger Zone */}
+                <View style={styles.section}>
+                    <View style={styles.listContainer}>
+                        {renderListItem(
+                            <LogOut size={20} color={Colors.black} />,
+                            'Sign Out',
+                            undefined,
+                            handleSignOut,
+                            false,
+                            true
+                        )}
+                    </View>
                 </View>
 
-                {/* Version Info */}
-                <Text style={styles.versionText}>Version 1.0.0</Text>
+                <Text style={styles.versionText}>Version 1.0.0 (Build 14)</Text>
             </ScrollView>
-            <EditProfileModal visible={editProfileVisible} onClose={() => setEditProfileVisible(false)} />
+
+            <DebugStatusSheet visible={debugSheetVisible} onClose={() => setDebugSheetVisible(false)} />
+
+            {partner && (
+                <PartnerProfileSheet
+                    visible={showPartnerSheet}
+                    partner={partner}
+                    todaySteps={partnerSteps}
+                    highestStreak={partnerHighestStreak}
+                    completedChallenges={partnerCompletedChallenges}
+                    isActive={isPartnerActive}
+                    onClose={() => setShowPartnerSheet(false)}
+                />
+            )}
+
+            {currentUser && (
+                <FeedbackSheet
+                    visible={showFeedbackSheet}
+                    onClose={() => setShowFeedbackSheet(false)}
+                    userId={currentUser.id}
+                />
+            )}
         </SafeAreaView>
     );
 };
@@ -175,123 +252,137 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: 16,
-        color: Colors.textSecondary,
+        color: Colors.black,
         marginTop: 4,
     },
     content: {
         padding: Layout.padding,
-        paddingBottom: 40,
     },
-    card: {
-        backgroundColor: Colors.card,
-        borderRadius: 20,
-        padding: 20,
-        marginBottom: 24,
+    section: {
+        marginBottom: 30,
     },
-    profileHeader: {
+    sectionHeader: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: Colors.black,
+        marginBottom: 10,
+        letterSpacing: 1,
+    },
+    profileCard: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        padding: 20,
+        backgroundColor: Colors.black,
+        borderWidth: 1,
+        borderColor: Colors.black,
     },
-    avatar: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        backgroundColor: Colors.primary,
+    avatarPlaceholder: {
+        width: 50,
+        height: 50,
+        backgroundColor: '#333',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 15,
+        borderWidth: 1,
+        borderColor: Colors.white,
     },
-    name: {
-        fontSize: 20,
+    profileName: {
+        fontSize: 18,
         fontWeight: 'bold',
-        color: Colors.text,
+        color: Colors.white,
     },
-    email: {
+    profileEmail: {
         fontSize: 14,
-        color: Colors.textSecondary,
+        color: '#CCC',
     },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: Colors.textSecondary,
-        marginBottom: 12,
-        marginLeft: 4,
-    },
-    partnerRow: {
+    partnerCard: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        padding: 20,
+        borderWidth: 1,
+        borderColor: Colors.black,
+        backgroundColor: Colors.white,
     },
     partnerInfo: {
+        flex: 1,
+    },
+    partnerLabelRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: 6,
+        marginBottom: 4,
     },
-    partnerAvatar: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: Colors.secondary,
+    partnerLabel: {
+        fontSize: 12,
+        color: Colors.black,
+    },
+    activeDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 0,
+        backgroundColor: '#22c55e',
     },
     partnerName: {
         fontSize: 18,
-        fontWeight: '600',
-        color: Colors.text,
-    },
-    partnerStatus: {
-        fontSize: 12,
-        color: Colors.success,
+        fontWeight: 'bold',
+        color: Colors.black,
     },
     disconnectButton: {
-        padding: 8,
+        padding: 10,
+        backgroundColor: Colors.black,
     },
-    noPartnerState: {
-        alignItems: 'flex-start',
-        gap: 16,
+    emptyPartner: {
+        padding: 20,
+        borderWidth: 1,
+        borderColor: Colors.black,
+        borderStyle: 'dashed',
+        alignItems: 'center',
     },
-    noPartnerText: {
-        color: Colors.textSecondary,
-        fontSize: 16,
+    emptyPartnerText: {
+        color: Colors.black,
     },
-    connectButton: {
+    listContainer: {
+        borderWidth: 1,
+        borderColor: Colors.black,
+    },
+    listItem: {
+        padding: 16,
+        backgroundColor: Colors.white,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.black,
+    },
+    listItemContent: {
         flexDirection: 'row',
-        backgroundColor: Colors.primary,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 24,
         alignItems: 'center',
     },
-    connectButtonText: {
-        color: '#FFF',
-        fontWeight: 'bold',
+    iconContainer: {
+        marginRight: 16,
+    },
+    textContainer: {
+        flex: 1,
+    },
+    itemTitle: {
         fontSize: 16,
+        fontWeight: '600',
+        color: Colors.black,
     },
-    actionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 4,
-    },
-    actionIcon: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: 'rgba(255, 59, 48, 0.1)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-    },
-    actionText: {
-        fontSize: 16,
-        fontWeight: '500',
-        color: Colors.text,
-    },
-    actionSubtext: {
+    itemSubtitle: {
         fontSize: 12,
-        color: Colors.textSecondary,
+        color: Colors.black,
+        marginTop: 2,
+        opacity: 0.7,
+    },
+    destructiveText: {
+        color: Colors.black,
+        fontWeight: '900',
+        textDecorationLine: 'underline',
     },
     versionText: {
         textAlign: 'center',
+        color: Colors.black,
+        opacity: 0.5,
         fontSize: 12,
-        color: Colors.textSecondary,
-        marginTop: 24,
-        marginBottom: 16,
+        marginTop: 20,
     },
 });

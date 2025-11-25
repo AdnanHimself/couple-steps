@@ -70,7 +70,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
                             value={username}
                             onChangeText={setUsername}
                             placeholder="Enter username"
-                            placeholderTextColor={Colors.textSecondary}
+                            placeholderTextColor={Colors.black}
                             autoCapitalize="none"
                         />
 
@@ -80,7 +80,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ visible, onC
                             value={avatarUrl}
                             onChangeText={setAvatarUrl}
                             placeholder="https://example.com/avatar.jpg"
-                            placeholderTextColor={Colors.textSecondary}
+                            placeholderTextColor={Colors.black}
                             autoCapitalize="none"
                         />
 
@@ -133,12 +133,12 @@ const styles = StyleSheet.create({
     },
     label: {
         fontSize: 14,
-        color: Colors.textSecondary,
+        color: Colors.black,
         marginBottom: 5,
     },
     input: {
         backgroundColor: Colors.surface,
-        borderRadius: 12,
+        borderRadius: 0,
         padding: 15,
         color: Colors.text,
         fontSize: 16,
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     saveButton: {
         backgroundColor: Colors.primary,
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 0,
         alignItems: 'center',
         marginTop: 10,
     },

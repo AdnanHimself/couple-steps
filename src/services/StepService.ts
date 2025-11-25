@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { Logger } from '../utils/Logger';
 
 export const StepService = {
     // Upload my steps for today
@@ -16,9 +17,9 @@ export const StepService = {
                 }, { onConflict: 'user_id, date' });
 
             if (error) throw error;
-            console.log('Steps synced:', count);
+            Logger.info('Steps synced:', count);
         } catch (e) {
-            console.error('Step Sync Error:', e);
+            Logger.error('Step Sync Error:', e);
         }
     },
 
@@ -37,7 +38,7 @@ export const StepService = {
             if (error && error.code !== 'PGRST116') throw error; // Ignore 'Row not found'
             return data?.count || 0;
         } catch (e) {
-            console.error('Get Partner Steps Error:', e);
+            Logger.error('Get Partner Steps Error:', e);
             return 0;
         }
     },
@@ -54,8 +55,14 @@ export const StepService = {
 
             return data || [];
         } catch (e) {
-            console.error('Get History Error:', e);
+            Logger.error('Get History Error:', e);
             return [];
         }
+    },
+
+    // Get hourly history (Stub for now to prevent crash)
+    getHourlyHistory: async (userId: string, date: Date) => {
+        // TODO: Implement actual hourly tracking if needed
+        return [];
     }
 };
