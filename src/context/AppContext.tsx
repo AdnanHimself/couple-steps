@@ -13,6 +13,7 @@ import {
     readRecords,
     getSdkStatus,
     SdkAvailabilityStatus,
+    getGrantedPermissions,
 } from 'react-native-health-connect';
 import { Platform, AppState } from 'react-native';
 
@@ -35,6 +36,7 @@ interface AppContextType {
     activeSoloChallenge: Challenge | null;
     challenges: Challenge[];
     isPartnerActive: boolean;
+    setActiveChallenge: (challenge: Challenge) => Promise<void>;
     setActiveSoloChallenge: (challenge: Challenge) => Promise<void>;
 }
 
@@ -65,10 +67,25 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             if (status === SdkAvailabilityStatus.SDK_AVAILABLE) {
                 const initialized = await initialize();
                 if (initialized) {
-                    await requestPermission([
-                        { accessType: 'read', recordType: 'Steps' },
-                        { accessType: 'write', recordType: 'Steps' } // Optional: if we want to write back
-                    ]);
+                    const permissionsRequested = [
+                        { accessType: 'read' as const, recordType: 'Steps' as const },
+                        { accessType: 'write' as const, recordType: 'Steps' as const }
+                    ];
+
+                    await requestPermission(permissionsRequested);
+
+                    // Verify permissions were granted
+                    const grantedPermissions = await getGrantedPermissions();
+                    const hasReadPermission = grantedPermissions.some(
+                        p => p.recordType === 'Steps' && p.accessType === 'read'
+                    );
+
+                    if (!hasReadPermission) {
+                        Logger.error('Health Connect permissions not granted');
+                        return;
+                    }
+
+                    Logger.info('Health Connect initialized with permissions');
                 }
             }
 
@@ -268,6 +285,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 setIsPartnerActive(pSteps > 0);
             }
 
+            // Initialize step tracking after user is loaded
+            if (Platform.OS === 'android') {
+                initHybridTracking();
+            }
+
         } catch (e) {
             Logger.error('Global Load Data Error:', e);
         } finally {
@@ -305,9 +327,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 }
             })
             .subscribe();
-
-        // Init Hybrid Tracking
-        initHybridTracking();
 
         return () => {
             authListener.subscription.unsubscribe();
@@ -401,6 +420,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 if (!currentUser) return;
                 await ChallengeService.setActiveSoloChallenge(currentUser.id, c.id);
                 setActiveSoloChallenge(c);
+            },
+            setActiveChallenge: async (c) => {
+                if (!currentUser) return;
+                await selectChallenge(c);
             }
         }}>
             {children}

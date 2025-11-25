@@ -151,16 +151,9 @@ export const AuthScreen = ({ navigation }: any) => {
                                 {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
                             </Text>
                         </TouchableOpacity>
-
-                        {/* Debug button */}
-                        <TouchableOpacity style={[styles.switchButton, { marginTop: 5 }]} onPress={() => setShowDebug(true)}>
-                            <Text style={styles.switchText}>Debug Logs</Text>
-                        </TouchableOpacity>
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
-            {/* Debug Bottom Sheet */}
-            {showDebug && <DebugBottomSheet visible={showDebug} onClose={() => setShowDebug(false)} />}
         </SafeAreaView>
     );
 };

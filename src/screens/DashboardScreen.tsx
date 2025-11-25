@@ -147,7 +147,18 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
 
     const handleSendNudge = async (type: NudgeType) => {
         if (!currentUser || !partner) return;
-        await NudgeService.sendNudge(currentUser.id, partner.id, type);
+
+        // Generate appropriate message based on type
+        const messages: Record<NudgeType, string> = {
+            motivate: "You've got this! Keep moving forward.",
+            challenge: "Think you can beat my 10k steps today?",
+            cheer: "You're absolutely crushing it today!",
+            poke: "Hey! Let's get those steps in!",
+            heart: "Sending you love and motivation!",
+            wave: "Hey there! How's your day going?"
+        };
+
+        await NudgeService.sendNudge(currentUser.id, partner.id, messages[type], type);
     };
 
     const handleSnackbarPress = () => {

@@ -33,23 +33,23 @@ export const ActiveChallengeCard: React.FC<ActiveChallengeCardProps> = ({
 
     if (state === 'no-partner') {
         return (
-            <View style={[styles.container, styles.placeholderCard]}>
+            <Card style={[styles.container, styles.placeholderCard]} onPress={onPress}>
                 <View style={styles.placeholderContent}>
                     <Users size={24} color={Colors.borderDashed} />
                     <Text style={styles.placeholderText}>No Partner Added</Text>
                 </View>
-            </View>
+            </Card>
         );
     }
 
     if (state === 'empty') {
         return (
-            <View style={[styles.container, styles.placeholderCard]}>
+            <Card style={[styles.container, styles.placeholderCard]} onPress={onPress}>
                 <View style={styles.placeholderContent}>
                     <Trophy size={24} color={Colors.borderDashed} />
                     <Text style={styles.placeholderText}>No Challenge Selected</Text>
                 </View>
-            </View>
+            </Card>
         );
     }
 

@@ -6,6 +6,7 @@ import { Colors, Layout } from '../constants/Colors';
 import { PedometerService } from '../services/PedometerService';
 import { getLatestNativeSteps } from '../services/NativePedometerService';
 import { useApp } from '../context/AppContext';
+import { getSdkStatus, SdkAvailabilityStatus, getGrantedPermissions } from 'react-native-health-connect';
 
 interface DebugStatusSheetProps {
     visible: boolean;
@@ -52,11 +53,24 @@ export const DebugStatusSheet: React.FC<DebugStatusSheetProps> = ({ visible, onC
 
             if (isAvailable) {
                 try {
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    const now = new Date();
-                    rawSteps = await PedometerService.getStepsBetween(today, now);
-                    permGranted = true;
+                    // Check if permissions are actually granted
+                    const sdkStatus = await getSdkStatus();
+                    if (sdkStatus === SdkAvailabilityStatus.SDK_AVAILABLE) {
+                        const grantedPerms = await getGrantedPermissions();
+                        const hasReadPermission = grantedPerms.some(
+                            p => p.recordType === 'Steps' && p.accessType === 'read'
+                        );
+                        permGranted = hasReadPermission;
+
+                        if (hasReadPermission) {
+                            const today = new Date();
+                            today.setHours(0, 0, 0, 0);
+                            const now = new Date();
+                            rawSteps = await PedometerService.getStepsBetween(today, now);
+                        }
+                    } else {
+                        permGranted = false;
+                    }
                 } catch (e: any) {
                     lastError = e.message || String(e);
                     permGranted = false;
@@ -72,10 +86,7 @@ export const DebugStatusSheet: React.FC<DebugStatusSheetProps> = ({ visible, onC
             }
 
             // Get UI step count
-            const today = new Date().toISOString().split('T')[0];
-            const uiSteps = currentUser
-                ? (steps.find(s => s.userId === currentUser.id && s.date === today)?.count || 0)
-                : 0;
+            const uiSteps = steps || 0;
 
             setDebugStatus({
                 trackingMethod,
