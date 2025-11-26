@@ -289,19 +289,26 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
             // 7. Determine Partner Activity
             if (partnerProfile) {
-                // Simple check: if partner has steps today > 0
-                const pSteps = await StepService.getPartnerSteps(partnerProfile.id);
-                setIsPartnerActive(pSteps > 0);
+                try {
+                    // Simple check: if partner has steps today > 0
+                    const pSteps = await StepService.getPartnerSteps(partnerProfile.id);
+                    setIsPartnerActive(pSteps > 0);
+                } catch (e) {
+                    Logger.error('Error checking partner activity:', e);
+                    setIsPartnerActive(false);
+                }
             }
 
             // Initialize step tracking after user is loaded
             if (Platform.OS === 'android') {
-                initHybridTracking();
+                // Don't await this - let it run in background
+                initHybridTracking().catch(e => Logger.error('Init tracking failed:', e));
             }
 
         } catch (e) {
             Logger.error('Global Load Data Error:', e);
         } finally {
+            // CRITICAL: Always set loading to false to prevent white screen
             setLoading(false);
         }
     };

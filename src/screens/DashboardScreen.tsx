@@ -16,6 +16,7 @@ import { supabase } from '../lib/supabase';
 // @ts-ignore
 import { Bell, Terminal } from 'lucide-react-native';
 import { DebugBottomSheet } from '../components/DebugBottomSheet';
+import { NudgeHistorySheet } from '../components/NudgeHistorySheet';
 
 type DashboardScreenProps = {
     navigation: NativeStackNavigationProp<RootStackParamList, 'MainTabs'>;
@@ -32,6 +33,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
     const [incomingNudge, setIncomingNudge] = useState<Nudge | null>(null);
     const [showSnackbar, setShowSnackbar] = useState(false);
     const [showDebug, setShowDebug] = useState(false);
+    const [showNudgeHistory, setShowNudgeHistory] = useState(false);
 
     const userSteps = useMemo(() => {
         if (!currentUser) return 0;
@@ -218,26 +220,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
                             textStyle={{ fontSize: 14 }}
                         />
                     ) : (
-                        <View style={styles.headerActions}>
-                            {/* Debug Button */}
-                            <TouchableOpacity style={styles.bellButton} onPress={() => setShowDebug(true)}>
-                                <Terminal size={24} color={Colors.black} />
-                            </TouchableOpacity>
-
-                            {/* Send Nudge Button */}
-                            <TouchableOpacity style={styles.sendNudgeButton} onPress={() => setShowSendNudge(true)}>
-                                <Text style={styles.sendNudgeText}>Send Nudge</Text>
-                            </TouchableOpacity>
-                            {/* Bell Icon with Badge */}
-                            <TouchableOpacity style={styles.bellButton} onPress={() => setShowNudgeInbox(true)}>
-                                <Bell size={24} color={Colors.black} />
-                                {unreadCount > 0 && (
-                                    <View style={styles.bellBadge}>
-                                        <Text style={styles.bellBadgeText}>{unreadCount}</Text>
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                        </View>
+                        <Button
+                            title="Nudge History"
+                            onPress={() => setShowNudgeHistory(true)}
+                            variant="outline"
+                            style={{ height: 40, minHeight: 40, paddingVertical: 0, paddingHorizontal: 16 }}
+                            textStyle={{ fontSize: 14 }}
+                        />
                     )}
                 </View>
 
@@ -280,7 +269,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
                     <NudgeInboxSheet
                         visible={showNudgeInbox}
                         nudges={nudges}
-                        partnerName={partner.username}
+                        partnerName={partner.username || 'Partner'}
                         unreadCount={unreadCount}
                         onClose={() => setShowNudgeInbox(false)}
                         onMarkAsRead={handleMarkAsRead}
@@ -292,7 +281,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
                     />
                     <NudgeSnackbar
                         visible={showSnackbar}
-                        senderName={partner.username}
+                        senderName={partner.username || 'Partner'}
                         message={incomingNudge?.message || ''}
                         type={incomingNudge?.type || 'cheer'}
                         onPress={handleSnackbarPress}
@@ -304,6 +293,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
             <DebugBottomSheet
                 visible={showDebug}
                 onClose={() => setShowDebug(false)}
+            />
+
+            <NudgeHistorySheet
+                visible={showNudgeHistory}
+                onClose={() => setShowNudgeHistory(false)}
+                onSendNudge={() => setShowSendNudge(true)}
             />
         </View>
     );

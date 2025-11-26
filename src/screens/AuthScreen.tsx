@@ -147,7 +147,7 @@ export const AuthScreen = ({ navigation }: any) => {
                         </TouchableOpacity>
 
                         <TouchableOpacity style={styles.switchButton} onPress={() => setIsSignUp(!isSignUp)}>
-                            <Text style={styles.switchText}>
+                            <Text style={[styles.switchText, !isSignUp && { color: '#22c55e' }]}>
                                 {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
                             </Text>
                         </TouchableOpacity>

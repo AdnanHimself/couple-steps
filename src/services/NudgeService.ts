@@ -46,7 +46,7 @@ export const NudgeService = {
                 .limit(50);
 
             if (error) throw error;
-            return data as Nudge[];
+            return (data || []) as Nudge[];
         } catch (e) {
             Logger.error('Error fetching nudges:', e);
             return [];

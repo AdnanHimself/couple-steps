@@ -81,8 +81,10 @@ export const CouplingScreen = ({ navigation }: CouplingScreenProps) => {
         setScanned(true);
         try {
             const partnerId = data;
+
+            // Prevent self-scanning
             if (!partnerId || partnerId === currentUser?.id) {
-                Alert.alert('Invalid Code', "You can't link with yourself!");
+                Alert.alert('Invalid Code', "You can't link with yourself! 😅");
                 setScanned(false);
                 return;
             }

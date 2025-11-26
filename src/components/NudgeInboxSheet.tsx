@@ -33,8 +33,8 @@ export const NudgeInboxSheet: React.FC<NudgeInboxSheetProps> = ({
     onClose,
     onMarkAsRead,
 }) => {
-    const unreadNudges = nudges.filter(n => !n.read);
-    const readNudges = nudges.filter(n => n.read);
+    const unreadNudges = (nudges || []).filter(n => !n.read);
+    const readNudges = (nudges || []).filter(n => n.read);
 
     const getTimeAgo = (timestamp: string) => {
         const now = new Date();

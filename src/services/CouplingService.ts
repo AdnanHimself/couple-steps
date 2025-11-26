@@ -7,16 +7,28 @@ export const CouplingService = {
     // Link two users as a couple
     linkPartners: async (userId: string, partnerId: string): Promise<{ success: boolean; error?: string }> => {
         try {
-            // Check if already linked
-            const { data: existing } = await supabase
+            // Check if current user already has a partner
+            const { data: userExisting } = await supabase
                 .from('couples')
                 .select('*')
                 .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
                 .single();
 
-            if (existing) {
+            if (userExisting) {
                 Logger.info('User already has a partner');
                 return { success: false, error: 'You already have a partner' };
+            }
+
+            // Check if partner user already has a partner
+            const { data: partnerExisting } = await supabase
+                .from('couples')
+                .select('*')
+                .or(`user1_id.eq.${partnerId},user2_id.eq.${partnerId}`)
+                .single();
+
+            if (partnerExisting) {
+                Logger.info('Scanned user already has a partner');
+                return { success: false, error: 'This user is already coupled with someone else' };
             }
 
             // Create the link
