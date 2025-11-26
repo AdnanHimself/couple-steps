@@ -9,15 +9,42 @@ import { Colors } from './src/constants/Colors';
 
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 
+import * as SplashScreen from 'expo-splash-screen';
+import { View } from 'react-native';
+import { useApp } from './src/context/AppContext';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
+
+const RootLayout = () => {
+  const { isReady } = useApp();
+
+  const onLayoutRootView = React.useCallback(async () => {
+    if (isReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [isReady]);
+
+  if (!isReady) {
+    return null;
+  }
+
+  return (
+    <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
+      <NavigationContainer>
+        <StatusBar style="dark" backgroundColor={Colors.background} />
+        <AppNavigator />
+      </NavigationContainer>
+    </View>
+  );
+};
+
 export default function App() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
         <AppProvider>
-          <NavigationContainer>
-            <StatusBar style="dark" backgroundColor={Colors.background} />
-            <AppNavigator />
-          </NavigationContainer>
+          <RootLayout />
         </AppProvider>
       </SafeAreaProvider>
     </ErrorBoundary>

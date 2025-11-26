@@ -3,7 +3,7 @@ import { Modal, View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions }
 import { Colors, Layout } from '../constants/Colors';
 import { Nudge, NudgeType } from '../services/NudgeService';
 // @ts-ignore
-import { X, Heart, Zap, PartyPopper } from 'lucide-react-native';
+import { X, Heart, Zap, PartyPopper, Footprints } from 'lucide-react-native';
 
 interface NudgeInboxSheetProps {
     visible: boolean;
@@ -23,6 +23,7 @@ const NUDGE_CONFIG: Record<NudgeType, { icon: any; color: string; emoji: string 
     motivate: { icon: Heart, color: '#ef4444', emoji: '💪' },
     challenge: { icon: Zap, color: '#f59e0b', emoji: '🔥' },
     cheer: { icon: PartyPopper, color: '#22c55e', emoji: '🎉' },
+    one_k: { icon: Footprints, color: '#8b5cf6', emoji: '😏' },
 };
 
 export const NudgeInboxSheet: React.FC<NudgeInboxSheetProps> = ({

@@ -144,7 +144,7 @@ export const StatsScreen = () => {
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>Activity Stats</Text>
+                <Text style={styles.title}>Our Team</Text>
                 <Text style={styles.subtitle}>Your Progress</Text>
             </View>
 
@@ -216,7 +216,7 @@ export const StatsScreen = () => {
                                             y={CHART_HEIGHT - 30 - partnerHeight}
                                             width={barWidth}
                                             height={partnerHeight}
-                                            fill={Colors.black}
+                                            fill="#ef4444"
                                             rx={barWidth / 2}
                                         />
                                     )}
@@ -226,7 +226,7 @@ export const StatsScreen = () => {
                                         y={CHART_HEIGHT - 30 - partnerHeight - myHeight}
                                         width={barWidth}
                                         height={myHeight}
-                                        fill={Colors.black}
+                                        fill="#22c55e"
                                         rx={barWidth / 2}
                                     />
                                     {/* Label */}
@@ -246,12 +246,12 @@ export const StatsScreen = () => {
 
                     <View style={styles.legend}>
                         <View style={styles.legendItem}>
-                            <View style={[styles.legendDot, { backgroundColor: Colors.black }]} />
+                            <View style={[styles.legendDot, { backgroundColor: '#22c55e' }]} />
                             <Text style={styles.legendText}>You</Text>
                         </View>
                         {partner && viewMode === 'week' && (
                             <View style={styles.legendItem}>
-                                <View style={[styles.legendDot, { backgroundColor: Colors.black }]} />
+                                <View style={[styles.legendDot, { backgroundColor: '#ef4444' }]} />
                                 <Text style={styles.legendText}>{partner.username}</Text>
                             </View>
                         )}

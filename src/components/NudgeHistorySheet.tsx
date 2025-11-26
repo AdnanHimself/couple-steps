@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, TouchableWithoutFeedback, Animated, PanResponder, Dimensions } from 'react-native';
 // @ts-ignore
-import { X, Send, Heart } from 'lucide-react-native';
+import { X, Send, Heart, Footprints } from 'lucide-react-native';
 import { Colors, Layout } from '../constants/Colors';
 import { useApp } from '../context/AppContext';
 import { Nudge } from '../services/NudgeService';
@@ -86,6 +86,8 @@ export const NudgeHistorySheet: React.FC<NudgeHistorySheetProps> = ({ visible, o
             case 'heart':
             case 'cheer':
                 return <Heart size={16} color={Colors.danger} fill={Colors.danger} />;
+            case 'one_k':
+                return <Footprints size={16} color={Colors.primary} />;
             default:
                 return <Send size={16} color={Colors.primary} />;
         }

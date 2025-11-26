@@ -10,6 +10,8 @@ import { DebugBottomSheet } from '../components/DebugBottomSheet';
 // Simple email validation helper
 const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+import { OnboardingCarousel } from '../components/OnboardingCarousel';
+
 export const AuthScreen = ({ navigation }: any) => {
     // Form state
     const [email, setEmail] = useState('');
@@ -18,6 +20,7 @@ export const AuthScreen = ({ navigation }: any) => {
     const [loading, setLoading] = useState(false);
     const [isSignUp, setIsSignUp] = useState(true);
     const [showDebug, setShowDebug] = useState(false);
+    const [showOnboarding, setShowOnboarding] = useState(true);
 
     const handleAuth = async () => {
         // Basic validation
@@ -82,6 +85,10 @@ export const AuthScreen = ({ navigation }: any) => {
             setLoading(false);
         }
     };
+
+    if (showOnboarding) {
+        return <OnboardingCarousel onComplete={() => setShowOnboarding(false)} />;
+    }
 
     return (
         <SafeAreaView style={styles.container}>

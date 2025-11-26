@@ -157,7 +157,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({ navigation }) 
             cheer: "You're absolutely crushing it today!",
             poke: "Hey! Let's get those steps in!",
             heart: "Sending you love and motivation!",
-            wave: "Hey there! How's your day going?"
+            wave: "Hey there! How's your day going?",
+            one_k: "Come on, just 1k more steps today 😏"
         };
 
         await NudgeService.sendNudge(currentUser.id, partner.id, messages[type], type);

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions } from '
 import { Colors } from '../constants/Colors';
 import { NudgeType } from '../services/NudgeService';
 // @ts-ignore
-import { Heart, Zap, PartyPopper } from 'lucide-react-native';
+import { Heart, Zap, PartyPopper, Footprints } from 'lucide-react-native';
 
 interface NudgeSnackbarProps {
     visible: boolean;
@@ -23,6 +23,7 @@ const NUDGE_CONFIG: Record<NudgeType, { icon: any; color: string; emoji: string 
     motivate: { icon: Heart, color: '#ef4444', emoji: '💪' },
     challenge: { icon: Zap, color: '#f59e0b', emoji: '🔥' },
     cheer: { icon: PartyPopper, color: '#22c55e', emoji: '🎉' },
+    one_k: { icon: Footprints, color: '#8b5cf6', emoji: '😏' },
 };
 
 export const NudgeSnackbar: React.FC<NudgeSnackbarProps> = ({

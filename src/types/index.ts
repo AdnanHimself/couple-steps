@@ -19,6 +19,7 @@ export interface User {
     username: string;
     avatarUrl: string;
     color: string;
+    email?: string;
 }
 
 /**

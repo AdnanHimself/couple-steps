@@ -6,7 +6,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { DashboardScreen } from '../screens/DashboardScreen';
 import { StatsScreen } from '../screens/StatsScreen';
 import { AccountScreen } from '../screens/AccountScreen';
-import { WelcomeScreen } from '../screens/WelcomeScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { CouplingScreen } from '../screens/CouplingScreen';
 import { ChallengeSelectionScreen } from '../screens/ChallengeSelectionScreen';
@@ -18,7 +17,6 @@ export type RootStackParamList = {
     Main: undefined;
     Coupling: undefined;
     ChallengeSelection: undefined;
-    Welcome: undefined;
     Auth: undefined;
     MainTabs: undefined;
 };
@@ -109,7 +107,7 @@ const MainTabs = () => {
                 name="Stats"
                 component={StatsScreen}
                 options={{
-                    tabBarLabel: "Stats",
+                    tabBarLabel: "Our Team",
                     tabBarIcon: ({ color }) => <BarChart3 color={color} size={24} />,
                 }}
             />
@@ -166,7 +164,6 @@ export const AppNavigator = () => {
                 </>
             ) : (
                 <>
-                    <Stack.Screen name="Welcome" component={WelcomeScreen} />
                     <Stack.Screen name="Auth" component={AuthScreen} />
                 </>
             )}

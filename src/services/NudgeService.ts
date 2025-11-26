@@ -1,7 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { Logger } from '../utils/Logger';
 
-export type NudgeType = 'poke' | 'heart' | 'wave' | 'motivate' | 'challenge' | 'cheer';
+export type NudgeType = 'poke' | 'heart' | 'wave' | 'motivate' | 'challenge' | 'cheer' | 'one_k';
 
 export interface Nudge {
     id: string;
@@ -41,7 +41,7 @@ export const NudgeService = {
             const { data, error } = await supabase
                 .from('nudges')
                 .select('*')
-                .eq('receiver_id', userId)
+                .or(`receiver_id.eq.${userId},sender_id.eq.${userId}`)
                 .order('created_at', { ascending: false })
                 .limit(50);
 

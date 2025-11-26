@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, RefreshControl, Alert } from 'react-native';
 // @ts-ignore
 import { X, CheckCircle, XCircle, AlertCircle, Activity } from 'lucide-react-native';
 import { Colors, Layout } from '../constants/Colors';
@@ -7,6 +7,9 @@ import { PedometerService } from '../services/PedometerService';
 import { getLatestNativeSteps } from '../services/NativePedometerService';
 import { useApp } from '../context/AppContext';
 import { getSdkStatus, SdkAvailabilityStatus, getGrantedPermissions } from 'react-native-health-connect';
+import { ChallengeService } from '../services/ChallengeService';
+
+import { Logger } from '../utils/Logger';
 
 interface DebugStatusSheetProps {
     visible: boolean;
@@ -35,10 +38,12 @@ export const DebugStatusSheet: React.FC<DebugStatusSheetProps> = ({ visible, onC
         uiStepCount: 0,
     });
     const [refreshing, setRefreshing] = useState(false);
+    const [logs, setLogs] = useState<string[]>([]);
 
     const fetchDebugStatus = async () => {
         try {
             console.log('[DEBUG] Fetching status...');
+            setLogs(Logger.getLogs());
 
             // Check SDK availability
             const isAvailable = await PedometerService.isAvailable();
@@ -240,6 +245,48 @@ export const DebugStatusSheet: React.FC<DebugStatusSheetProps> = ({ visible, onC
                             </Text>
                         </View>
 
+                        {/* Logs */}
+                        <Text style={styles.sectionTitle}>System Logs</Text>
+                        <View style={[styles.card, { maxHeight: 200 }]}>
+                            <ScrollView nestedScrollEnabled>
+                                {logs.map((log, i) => (
+                                    <Text key={i} style={styles.logText}>{log}</Text>
+                                ))}
+                                {logs.length === 0 && <Text style={styles.logText}>No logs yet.</Text>}
+                            </ScrollView>
+                        </View>
+
+                        {/* Actions */}
+                        <Text style={styles.sectionTitle}>Admin Actions</Text>
+                        <View style={styles.card}>
+                            <TouchableOpacity
+                                style={styles.actionButton}
+                                onPress={() => {
+                                    Alert.alert(
+                                        'Reset Challenges?',
+                                        'This will DELETE all existing challenges and replace them with the new list. This cannot be undone.',
+                                        [
+                                            { text: 'Cancel', style: 'cancel' },
+                                            {
+                                                text: 'Reset',
+                                                style: 'destructive',
+                                                onPress: async () => {
+                                                    const success = await ChallengeService.resetChallenges();
+                                                    if (success) {
+                                                        Alert.alert('Success', 'Challenges have been reset.');
+                                                    } else {
+                                                        Alert.alert('Error', 'Failed to reset challenges. Check logs.');
+                                                    }
+                                                }
+                                            }
+                                        ]
+                                    );
+                                }}
+                            >
+                                <Text style={styles.actionButtonText}>Reset Challenges DB</Text>
+                            </TouchableOpacity>
+                        </View>
+
                         <View style={{ height: 40 }} />
                     </ScrollView>
                 </View>
@@ -325,5 +372,23 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: Colors.text,
         lineHeight: 20,
+    },
+    logText: {
+        fontSize: 10,
+        color: Colors.black,
+        fontFamily: 'monospace',
+        marginBottom: 4,
+    },
+    actionButton: {
+        backgroundColor: Colors.black,
+        padding: 12,
+        alignItems: 'center',
+        marginTop: 8,
+    },
+    actionButtonText: {
+        color: Colors.white,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        fontSize: 12,
     },
 });

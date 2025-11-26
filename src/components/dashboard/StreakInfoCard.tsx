@@ -45,7 +45,7 @@ export const StreakInfoCard: React.FC<StreakInfoCardProps> = ({ streak, highestS
 
 const styles = StyleSheet.create({
     container: {
-        padding: 20,
+        padding: 16,
     },
     streaksRow: {
         flexDirection: 'row',
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     divider: {
         height: 1,
         backgroundColor: Colors.border,
-        marginVertical: 15,
+        marginVertical: 12,
     },
     bottomSection: {
         alignItems: 'center',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Switch, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // @ts-ignore
@@ -13,7 +13,7 @@ import { PartnerProfileSheet } from '../components/PartnerProfileSheet';
 import { FeedbackSheet } from '../components/FeedbackSheet';
 
 export const AccountScreen = () => {
-    const { currentUser, partner, steps, stepHistory, isPartnerActive } = useApp();
+    const { currentUser, partner, steps, stepHistory, isPartnerActive, requestPermissions } = useApp();
     const [userEmail, setUserEmail] = useState<string>('');
     const [debugSheetVisible, setDebugSheetVisible] = useState(false);
 
@@ -103,73 +103,52 @@ export const AccountScreen = () => {
         );
     };
 
-    const renderListItem = (icon: React.ReactNode, title: string, subtitle?: string, onPress?: () => void, showChevron = true, isDestructive = false) => (
-        <TouchableOpacity
-            style={styles.listItem}
-            onPress={onPress}
-            activeOpacity={0.7}
-        >
-            <View style={styles.listItemContent}>
-                <View style={styles.iconContainer}>
-                    {icon}
-                </View>
-                <View style={styles.textContainer}>
-                    <Text style={[styles.itemTitle, isDestructive && styles.destructiveText]}>{title}</Text>
-                    {subtitle && <Text style={styles.itemSubtitle}>{subtitle}</Text>}
-                </View>
-                {showChevron && <ChevronRight size={20} color={Colors.black} />}
-            </View>
-        </TouchableOpacity>
-    );
-
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>Account</Text>
-                <Text style={styles.subtitle}>Manage Your Profile</Text>
+                <Text style={styles.subtitle}>{userEmail}</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
                 {/* Profile Section */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionHeader}>PROFILE</Text>
+                    <Text style={styles.sectionHeader}>MY PROFILE</Text>
                     <View style={styles.profileCard}>
                         <View style={styles.avatarPlaceholder}>
-                            <User size={32} color={Colors.white} />
+                            <User size={24} color={Colors.white} />
                         </View>
                         <View>
-                            <Text style={styles.profileName}>{currentUser?.username || 'User'}</Text>
+                            <Text style={styles.profileName}>You</Text>
                             <Text style={styles.profileEmail}>{userEmail}</Text>
                         </View>
                     </View>
+                    {/* Request Permissions Button (Android Only) */}
+                    {Platform.OS === 'android' && (
+                        <TouchableOpacity style={styles.permissionButton} onPress={requestPermissions}>
+                            <Text style={styles.permissionButtonText}>Request Health Permissions</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
 
                 {/* Partner Section */}
                 <View style={styles.section}>
                     <Text style={styles.sectionHeader}>PARTNER</Text>
                     {partner ? (
-                        <TouchableOpacity
-                            style={styles.partnerCard}
-                            onPress={() => setShowPartnerSheet(true)}
-                            activeOpacity={0.9}
-                        >
+                        <TouchableOpacity style={styles.partnerCard} onPress={() => setShowPartnerSheet(true)}>
                             <View style={styles.partnerInfo}>
                                 <View style={styles.partnerLabelRow}>
-                                    <Text style={styles.partnerLabel}>Connected with</Text>
-                                    {isPartnerActive && (
-                                        <View style={styles.activeDot} />
-                                    )}
+                                    <Text style={styles.partnerLabel}>Connected</Text>
+                                    {isPartnerActive && <View style={styles.activeDot} />}
                                 </View>
-                                <Text style={styles.partnerName}>{partner.username}</Text>
+                                <Text style={styles.partnerName}>{partner.email?.split('@')[0] || 'Partner'}</Text>
                             </View>
-                            <TouchableOpacity style={styles.disconnectButton} onPress={handleDisconnect}>
-                                <Unplug size={20} color={Colors.white} />
-                            </TouchableOpacity>
+                            <ChevronRight size={20} color={Colors.black} />
                         </TouchableOpacity>
                     ) : (
-                        <View style={styles.emptyPartner}>
+                        <TouchableOpacity style={styles.emptyPartner} onPress={() => { }}>
                             <Text style={styles.emptyPartnerText}>No partner connected</Text>
-                        </View>
+                        </TouchableOpacity>
                     )}
                 </View>
 
@@ -177,32 +156,53 @@ export const AccountScreen = () => {
                 <View style={styles.section}>
                     <Text style={styles.sectionHeader}>SETTINGS</Text>
                     <View style={styles.listContainer}>
-                        {renderListItem(
-                            <Bug size={20} color={Colors.black} />,
-                            'Debug Menu',
-                            'View logs and system status',
-                            () => setDebugSheetVisible(true)
-                        )}
-                        {renderListItem(
-                            <MessageSquare size={20} color={Colors.black} />,
-                            'Send Feedback',
-                            'Report bugs or suggest features',
-                            () => setShowFeedbackSheet(true)
-                        )}
-                    </View>
-                </View>
+                        <TouchableOpacity style={styles.listItem} onPress={() => setShowFeedbackSheet(true)}>
+                            <View style={styles.listItemContent}>
+                                <View style={styles.iconContainer}>
+                                    <MessageSquare size={20} color={Colors.black} />
+                                </View>
+                                <View style={styles.textContainer}>
+                                    <Text style={styles.itemTitle}>Send Feedback</Text>
+                                </View>
+                                <ChevronRight size={20} color={Colors.black} />
+                            </View>
+                        </TouchableOpacity>
 
-                {/* Danger Zone */}
-                <View style={styles.section}>
-                    <View style={styles.listContainer}>
-                        {renderListItem(
-                            <LogOut size={20} color={Colors.black} />,
-                            'Sign Out',
-                            undefined,
-                            handleSignOut,
-                            false,
-                            true
+                        <TouchableOpacity style={styles.listItem} onPress={() => setDebugSheetVisible(true)}>
+                            <View style={styles.listItemContent}>
+                                <View style={styles.iconContainer}>
+                                    <Bug size={20} color={Colors.black} />
+                                </View>
+                                <View style={styles.textContainer}>
+                                    <Text style={styles.itemTitle}>Debug Menu</Text>
+                                </View>
+                                <ChevronRight size={20} color={Colors.black} />
+                            </View>
+                        </TouchableOpacity>
+
+                        {partner && (
+                            <TouchableOpacity style={styles.listItem} onPress={handleDisconnect}>
+                                <View style={styles.listItemContent}>
+                                    <View style={styles.iconContainer}>
+                                        <Unplug size={20} color={Colors.danger} />
+                                    </View>
+                                    <View style={styles.textContainer}>
+                                        <Text style={[styles.itemTitle, { color: Colors.danger }]}>Disconnect Partner</Text>
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
                         )}
+
+                        <TouchableOpacity style={styles.listItem} onPress={handleSignOut}>
+                            <View style={styles.listItemContent}>
+                                <View style={styles.iconContainer}>
+                                    <LogOut size={20} color={Colors.black} />
+                                </View>
+                                <View style={styles.textContainer}>
+                                    <Text style={styles.itemTitle}>Sign Out</Text>
+                                </View>
+                            </View>
+                        </TouchableOpacity>
                     </View>
                 </View>
 
@@ -211,26 +211,30 @@ export const AccountScreen = () => {
 
             <DebugStatusSheet visible={debugSheetVisible} onClose={() => setDebugSheetVisible(false)} />
 
-            {partner && (
-                <PartnerProfileSheet
-                    visible={showPartnerSheet}
-                    partner={partner}
-                    todaySteps={partnerSteps}
-                    highestStreak={partnerHighestStreak}
-                    completedChallenges={partnerCompletedChallenges}
-                    isActive={isPartnerActive}
-                    onClose={() => setShowPartnerSheet(false)}
-                />
-            )}
+            {
+                partner && (
+                    <PartnerProfileSheet
+                        visible={showPartnerSheet}
+                        partner={partner}
+                        todaySteps={partnerSteps}
+                        highestStreak={partnerHighestStreak}
+                        completedChallenges={partnerCompletedChallenges}
+                        isActive={isPartnerActive}
+                        onClose={() => setShowPartnerSheet(false)}
+                    />
+                )
+            }
 
-            {currentUser && (
-                <FeedbackSheet
-                    visible={showFeedbackSheet}
-                    onClose={() => setShowFeedbackSheet(false)}
-                    userId={currentUser.id}
-                />
-            )}
-        </SafeAreaView>
+            {
+                currentUser && (
+                    <FeedbackSheet
+                        visible={showFeedbackSheet}
+                        onClose={() => setShowFeedbackSheet(false)}
+                        userId={currentUser.id}
+                    />
+                )
+            }
+        </SafeAreaView >
     );
 };
 
@@ -385,4 +389,17 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 20,
     },
+    permissionButton: {
+        marginTop: 12,
+        padding: 12,
+        backgroundColor: Colors.white,
+        borderWidth: 1,
+        borderColor: Colors.black,
+        alignItems: 'center',
+    },
+    permissionButtonText: {
+        color: Colors.black,
+        fontWeight: '600',
+        fontSize: 14,
+    }
 });

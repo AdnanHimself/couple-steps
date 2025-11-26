@@ -82,8 +82,8 @@ export const ActiveChallengeCard: React.FC<ActiveChallengeCardProps> = ({
 const styles = StyleSheet.create({
     container: {
         width: '100%',
-        marginBottom: 16,
-        minHeight: 100,
+        marginBottom: 10,
+        minHeight: 70,
     },
     placeholderCard: {
         borderStyle: 'dashed',
@@ -93,12 +93,12 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.white,
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: 100,
+        minHeight: 70,
     },
     placeholderContent: {
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 20,
+        paddingVertical: 16,
         paddingHorizontal: 16,
     },
     placeholderText: {
@@ -108,20 +108,20 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     content: {
-        padding: 16,
+        padding: 12,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 4,
     },
     titleRow: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     typeText: {
-        fontSize: 11,
+        fontSize: 10,
         color: Colors.black,
         textTransform: 'uppercase',
         letterSpacing: 1,
@@ -136,13 +136,13 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         color: Colors.text,
-        marginBottom: 12,
+        marginBottom: 4,
     },
     progressContainer: {
-        marginTop: 12,
+        marginTop: 6,
     },
     progressBarBg: {
-        height: 12,
+        height: 8,
         backgroundColor: Colors.white,
         borderWidth: 1,
         borderColor: Colors.black,
@@ -154,9 +154,9 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.black,
     },
     stepsText: {
-        fontSize: 12,
+        fontSize: 11,
         color: Colors.black,
         textAlign: 'right',
-        marginTop: 4,
+        marginTop: 2,
     },
 });

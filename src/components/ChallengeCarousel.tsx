@@ -6,13 +6,13 @@ import { useApp } from '../context/AppContext';
 import { useNavigation } from '@react-navigation/native';
 
 export const ChallengeCarousel = () => {
-    const { activeChallenge, setActiveChallenge, steps, currentUser, partner, challenges } = useApp();
+    const { activeChallenge, setActiveChallenge, stepHistory, currentUser, partner, challenges } = useApp();
     const navigation = useNavigation();
 
     const getStepsForUser = (userId: string) => {
-        return steps
+        return stepHistory
             .filter(s => s.userId === userId)
-            .reduce((acc, curr) => acc + curr.count, 0);
+            .reduce((acc: number, curr: any) => acc + curr.count, 0);
     };
 
     const userSteps = currentUser ? getStepsForUser(currentUser.id) : 0;

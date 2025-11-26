@@ -45,8 +45,8 @@ const styles = StyleSheet.create({
     card: {
         backgroundColor: Colors.card,
         borderRadius: Layout.borderRadius,
-        padding: 20,
-        marginBottom: 20,
+        padding: 16,
+        marginBottom: 16,
         width: CARD_WIDTH,
         marginRight: 16,
         borderWidth: 1,
@@ -59,11 +59,11 @@ const styles = StyleSheet.create({
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 8,
         gap: 10,
     },
     cardTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: 'bold',
         color: Colors.black,
         flex: 1,
@@ -72,19 +72,19 @@ const styles = StyleSheet.create({
         color: Colors.white,
     },
     cardDescription: {
-        fontSize: 14,
+        fontSize: 13,
         color: Colors.black,
-        marginBottom: 20,
+        marginBottom: 12,
     },
     activeDescription: {
         color: Colors.white,
     },
     progressContainer: {
-        height: 12,
+        height: 8,
         backgroundColor: 'rgba(255,255,255,0.1)',
         borderRadius: 0,
         overflow: 'hidden',
-        marginBottom: 8,
+        marginBottom: 6,
         borderWidth: 1,
         borderColor: Colors.black,
     },
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     progressText: {
-        fontSize: 12,
+        fontSize: 11,
         color: Colors.black,
     },
     activeProgressText: {

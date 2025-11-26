@@ -3,7 +3,7 @@ import { Modal, View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'rea
 import { Colors, Layout } from '../constants/Colors';
 import { NudgeType } from '../services/NudgeService';
 // @ts-ignore
-import { X, Heart, Zap, PartyPopper } from 'lucide-react-native';
+import { X, Heart, Zap, PartyPopper, Footprints } from 'lucide-react-native';
 
 interface SendNudgeSheetProps {
     visible: boolean;
@@ -44,6 +44,14 @@ const NUDGE_TYPES: Array<{
             emoji: '❤️',
             title: 'Cheer',
             message: "You're absolutely crushing it today!",
+        },
+        {
+            type: 'one_k',
+            icon: Footprints,
+            color: '#8b5cf6',
+            emoji: '😏',
+            title: 'Push',
+            message: "Come on, just 1k more steps today 😏",
         },
     ];
 

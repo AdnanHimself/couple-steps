@@ -17,38 +17,55 @@ import {
 } from 'react-native-health-connect';
 import { Platform, AppState } from 'react-native';
 
+/**
+ * AppContextType defines the shape of the global application state.
+ * It includes user data, step counts, challenges, and helper functions.
+ */
 interface AppContextType {
     currentUser: User | null;
     partner: User | null;
-    steps: number;
-    partnerSteps: number;
-    activeChallenge: Challenge | null;
-    loading: boolean;
-    refreshData: () => Promise<void>;
-    updateSteps: (count: number) => void;
-    isSolo: boolean;
+    steps: number; // Current user's steps for today
+    partnerSteps: number; // Partner's steps for today
+    activeChallenge: Challenge | null; // Currently active couple or solo challenge
+    loading: boolean; // Global loading state
+    refreshData: () => Promise<void>; // Function to manually refresh all data
+    updateSteps: (count: number) => void; // Function to update local step count
+    isSolo: boolean; // True if user has no partner
     sendNudge: (receiverId: string, message: string, type: NudgeType) => Promise<boolean>;
     selectChallenge: (challenge: Challenge) => Promise<void>;
     unreadNudges: number;
     markNudgeAsRead: (nudgeId: string) => Promise<void>;
     nudges: Nudge[];
-    stepHistory: StepLog[];
+    stepHistory: StepLog[]; // History of user's steps
     activeSoloChallenge: Challenge | null;
-    challenges: Challenge[];
-    isPartnerActive: boolean;
+    challenges: Challenge[]; // List of available challenges
+    isPartnerActive: boolean; // True if partner has activity today
     setActiveChallenge: (challenge: Challenge) => Promise<void>;
     setActiveSoloChallenge: (challenge: Challenge) => Promise<void>;
+    requestPermissions: () => Promise<void>; // Manually request Health Connect permissions
+    setCurrentUser: (user: User | null) => void;
+    isReady: boolean; // True when initial data load is complete
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+/**
+ * AppProvider component that wraps the application and provides global state.
+ * Handles:
+ * - Authentication state monitoring
+ * - Data fetching (User, Partner, Steps, Challenges, Nudges)
+ * - Hybrid Step Tracking (Health Connect + Pedometer)
+ * - Realtime updates via Supabase
+ */
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+    // --- State Definitions ---
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [partner, setPartner] = useState<User | null>(null);
     const [steps, setSteps] = useState<number>(0);
     const [partnerSteps, setPartnerSteps] = useState<number>(0);
     const [activeChallenge, setActiveChallenge] = useState<Challenge | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+    const [isReady, setIsReady] = useState<boolean>(false);
     const [stepHistory, setStepHistory] = useState<StepLog[]>([]);
     const [unreadNudges, setUnreadNudges] = useState<number>(0);
     const [nudges, setNudges] = useState<Nudge[]>([]);
@@ -56,8 +73,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     const [challenges, setChallenges] = useState<Challenge[]>([]);
     const [isPartnerActive, setIsPartnerActive] = useState<boolean>(false);
 
-    // Hybrid Tracking: Native Sensor (Foreground) + Health Service (Background)
-    let pollingInterval: ReturnType<typeof setInterval> | null = null;
+    /**
+     * Initializes hybrid step tracking.
+     * 1. Checks and requests Health Connect permissions (Android).
+     * 2. Sets up Pedometer for live foreground updates (optional/visual).
+     */
     const initHybridTracking = async () => {
         if (Platform.OS !== 'android') return;
 
@@ -110,53 +130,63 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 Logger.error('Pedometer error - continuing without it:', pedometerError);
             }
 
-            // 3. Polling Mechanism (Sync every 1 min)
-            // This pulls from Health Connect (which aggregates all sources including system pedometer)
-            const syncSteps = async () => {
-                if (!currentUser) return;
-
-                const now = new Date();
-                const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-                try {
-                    const records = await readRecords('Steps', {
-                        timeRangeFilter: {
-                            operator: 'between',
-                            startTime: startOfDay.toISOString(),
-                            endTime: now.toISOString(),
-                        },
-                    });
-
-                    const totalSteps = records.records.reduce((acc: number, record: any) => acc + record.count, 0);
-                    if (totalSteps > steps) {
-                        updateSteps(totalSteps);
-                    }
-                } catch (e) {
-                    Logger.error('Health Connect Sync Error:', e);
-                }
-            };
-
-            // Initial Sync
-            syncSteps();
-            // Poll
-            pollingInterval = setInterval(syncSteps, 60000);
-
         } catch (e) {
             Logger.error('Hybrid Tracking Init Error:', e);
         }
     };
 
+    /**
+     * Syncs steps from Health Connect.
+     * Reads step records for the current day and updates the state if the count is higher.
+     * This is the source of truth for step data on Android.
+     */
+    const syncSteps = async () => {
+        if (!currentUser || Platform.OS !== 'android') return;
+
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        try {
+            Logger.info(`Syncing steps from ${startOfDay.toISOString()} to ${now.toISOString()}`);
+
+            const records = await readRecords('Steps', {
+                timeRangeFilter: {
+                    operator: 'between',
+                    startTime: startOfDay.toISOString(),
+                    endTime: now.toISOString(),
+                },
+            });
+
+            const totalSteps = records.records.reduce((acc: number, record: any) => acc + record.count, 0);
+            Logger.info(`Health Connect: Found ${records.records.length} records, Total Steps: ${totalSteps}`);
+
+            if (totalSteps > steps) {
+                updateSteps(totalSteps);
+            }
+        } catch (e) {
+            Logger.error('Health Connect Sync Error:', e);
+        }
+    };
+    /**
+     * Main data fetching function.
+     * Loads: User Profile, Partner Profile, Step History, Active Challenges, Nudges.
+     * Also initializes background step tracking on Android.
+     */
     const loadData = async () => {
+        // Only set loading true if we don't have a user yet (initial load)
+        if (!currentUser) setLoading(true);
+
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.user) {
                 setCurrentUser(null);
                 setLoading(false);
+                setIsReady(true);
                 return;
             }
 
-            // 1. Fetch Current User Profile
-            let userProfile = null;
+            // 1. Fetch Current User Profile (Blocking)
+            let userProfile: User | null = null;
             try {
                 const { data, error } = await supabase
                     .from('profiles')
@@ -167,152 +197,174 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
                 if (error) throw error;
                 userProfile = {
                     ...data,
-                    avatarUrl: data.avatar_url, // Map snake_case to camelCase
-                    color: Colors.primary // Default color since not in DB
+                    avatarUrl: data.avatar_url,
+                    color: Colors.primary,
+                    email: session.user.email
                 };
                 setCurrentUser(userProfile);
             } catch (e) {
                 Logger.error('Error fetching user profile:', e);
-                // Fallback or critical error handling
             }
 
             if (!userProfile) {
                 setLoading(false);
+                setIsReady(true);
                 return;
             }
 
-            // 2. Fetch Partner (if exists)
-            let partnerProfile = null;
-            try {
-                const { data: coupleData, error: coupleError } = await supabase
-                    .from('couples')
-                    .select('user1_id, user2_id')
-                    .or(`user1_id.eq.${userProfile.id},user2_id.eq.${userProfile.id}`)
-                    .single();
+            // 2. Parallel Data Fetching
+            const promises = [];
 
-                if (coupleData) {
-                    const partnerId = coupleData.user1_id === userProfile.id ? coupleData.user2_id : coupleData.user1_id;
-                    if (partnerId) {
-                        const { data: pData, error: pError } = await supabase
-                            .from('profiles')
-                            .select('*')
-                            .eq('id', partnerId)
-                            .single();
-                        if (pData) {
-                            const partnerUser = {
-                                ...pData,
-                                avatarUrl: pData.avatar_url,
-                                color: Colors.secondary // Default color for partner
-                            };
-                            partnerProfile = partnerUser;
-                            setPartner(partnerUser);
-                        }
-                    }
-                }
-            } catch (e) {
-                Logger.error('Error fetching partner:', e);
-            }
-
-            // 3. Fetch Steps (My Steps & Partner Steps)
-            try {
-                // My Steps (from DB for persistence check, but local sensor will override)
-                const history = await StepService.getHistory(userProfile.id, partnerProfile ? partnerProfile.id : 'none');
-                const realSteps: StepLog[] = history.map((h: DBStepLog) => ({
-                    userId: h.user_id,
-                    date: h.date,
-                    count: h.count
-                }));
-                setStepHistory(realSteps);
-
-                // Set today's steps from history if available
-                const today = new Date().toISOString().split('T')[0];
-                const todayLog = realSteps.find(s => s.date === today && s.userId === userProfile.id);
-                if (todayLog) {
-                    setSteps(todayLog.count);
-                }
-
-                // Partner Steps
-                if (partnerProfile) {
-                    const pSteps = await StepService.getPartnerSteps(partnerProfile.id);
-                    setPartnerSteps(pSteps);
-                }
-            } catch (e) {
-                Logger.error('Error fetching steps:', e);
-            }
-
-            // 4. Fetch Active Challenge
-            try {
-                if (partnerProfile) {
-                    // Couple Challenge
+            // A. Fetch Partner
+            const fetchPartner = async () => {
+                try {
                     const { data: coupleData } = await supabase
                         .from('couples')
-                        .select('id')
-                        .or(`user1_id.eq.${userProfile.id},user2_id.eq.${userProfile.id}`)
+                        .select('user1_id, user2_id')
+                        .or(`user1_id.eq.${userProfile!.id},user2_id.eq.${userProfile!.id}`)
                         .single();
 
                     if (coupleData) {
-                        const active = await ChallengeService.getActiveChallenge(coupleData.id);
-                        setActiveChallenge(active);
+                        const partnerId = coupleData.user1_id === userProfile!.id ? coupleData.user2_id : coupleData.user1_id;
+                        if (partnerId) {
+                            const { data: pData } = await supabase
+                                .from('profiles')
+                                .select('*')
+                                .eq('id', partnerId)
+                                .single();
+                            if (pData) {
+                                const partnerUser = {
+                                    ...pData,
+                                    avatarUrl: pData.avatar_url,
+                                    color: Colors.secondary
+                                };
+                                setPartner(partnerUser);
+                                return partnerUser;
+                            }
+                        }
                     }
-                } else {
-                    // Solo Challenge
-                    const active = await ChallengeService.getActiveSoloChallenge(userProfile.id);
-                    setActiveChallenge(active);
-                    setActiveSoloChallenge(active);
-                }
-
-                // Always try to fetch active solo challenge even if coupled (for solo view)
-                const solo = await ChallengeService.getActiveSoloChallenge(userProfile.id);
-                setActiveSoloChallenge(solo);
-            } catch (e) {
-                Logger.error('Error fetching active challenge:', e);
-            }
-
-            // 5. Fetch Nudges & Unread Count
-            try {
-                const count = await NudgeService.getUnreadCount(userProfile.id);
-                setUnreadNudges(count);
-
-                const nudgeList = await NudgeService.getNudges(userProfile.id);
-                setNudges(nudgeList);
-            } catch (e) {
-                Logger.error('Error fetching nudges:', e);
-            }
-
-            // 6. Fetch Challenges List
-            try {
-                const allChallenges = await ChallengeService.getChallenges();
-                setChallenges(allChallenges);
-            } catch (e) {
-                Logger.error('Error fetching challenges:', e);
-            }
-
-            // 7. Determine Partner Activity
-            if (partnerProfile) {
-                try {
-                    // Simple check: if partner has steps today > 0
-                    const pSteps = await StepService.getPartnerSteps(partnerProfile.id);
-                    setIsPartnerActive(pSteps > 0);
+                    setPartner(null);
+                    return null;
                 } catch (e) {
-                    Logger.error('Error checking partner activity:', e);
-                    setIsPartnerActive(false);
+                    Logger.error('Error fetching partner:', e);
+                    setPartner(null);
+                    return null;
                 }
-            }
+            };
+
+            // B. Fetch Challenges (List)
+            const fetchChallenges = async () => {
+                try {
+                    const allChallenges = await ChallengeService.getChallenges();
+                    setChallenges(allChallenges);
+                } catch (e) {
+                    Logger.error('Error fetching challenges:', e);
+                }
+            };
+
+            // C. Fetch Nudges
+            const fetchNudges = async () => {
+                try {
+                    const [count, nudgeList] = await Promise.all([
+                        NudgeService.getUnreadCount(userProfile!.id),
+                        NudgeService.getNudges(userProfile!.id)
+                    ]);
+                    setUnreadNudges(count);
+                    setNudges(nudgeList);
+                } catch (e) {
+                    Logger.error('Error fetching nudges:', e);
+                }
+            };
+
+            // Execute independent fetches
+            const [partnerResult] = await Promise.all([
+                fetchPartner(),
+                fetchChallenges(),
+                fetchNudges()
+            ]);
+
+            // D. Dependent Fetches (Need Partner or Challenges)
+            const fetchStepsAndActiveChallenge = async () => {
+                try {
+                    // My Steps
+                    const history = await StepService.getHistory(userProfile!.id, partnerResult ? partnerResult.id : 'none');
+                    const realSteps: StepLog[] = history.map((h: DBStepLog) => ({
+                        userId: h.user_id,
+                        date: h.date,
+                        count: h.count
+                    }));
+                    setStepHistory(realSteps);
+
+                    const today = new Date().toISOString().split('T')[0];
+                    const todayLog = realSteps.find(s => s.date === today && s.userId === userProfile?.id);
+                    if (todayLog) setSteps(todayLog.count);
+
+                    // Partner Steps
+                    if (partnerResult) {
+                        const pSteps = await StepService.getPartnerSteps(partnerResult.id);
+                        setPartnerSteps(pSteps);
+                        setIsPartnerActive(pSteps > 0);
+                    }
+
+                    // Active Challenge
+                    if (partnerResult) {
+                        // Couple Challenge
+                        const { data: coupleData } = await supabase
+                            .from('couples')
+                            .select('id')
+                            .or(`user1_id.eq.${userProfile!.id},user2_id.eq.${userProfile!.id}`)
+                            .single();
+
+                        if (coupleData) {
+                            const active = await ChallengeService.getActiveChallenge(coupleData.id);
+                            setActiveChallenge(active);
+                        }
+                    } else {
+                        // Solo Challenge
+                        let solo = await ChallengeService.getActiveSoloChallenge(userProfile!.id);
+
+                        // Default to first solo challenge if none selected
+                        if (!solo) {
+                            const allChallenges = await ChallengeService.getChallenges();
+                            if (allChallenges && allChallenges.length > 0) {
+                                const firstChallenge = allChallenges[0];
+                                await ChallengeService.setActiveSoloChallenge(userProfile!.id, firstChallenge.id);
+                                solo = firstChallenge;
+                            }
+                        }
+                        setActiveChallenge(solo);
+                        setActiveSoloChallenge(solo);
+                    }
+                } catch (e) {
+                    Logger.error('Error fetching dependent data:', e);
+                }
+            };
+
+            await fetchStepsAndActiveChallenge();
 
             // Initialize step tracking after user is loaded
             if (Platform.OS === 'android') {
-                // Don't await this - let it run in background
                 initHybridTracking().catch(e => Logger.error('Init tracking failed:', e));
+                syncSteps();
             }
 
         } catch (e) {
             Logger.error('Global Load Data Error:', e);
         } finally {
-            // CRITICAL: Always set loading to false to prevent white screen
             setLoading(false);
+            setIsReady(true);
         }
     };
 
+    // Polling for steps (every 3 seconds)
+    useEffect(() => {
+        if (currentUser && Platform.OS === 'android') {
+            const interval = setInterval(syncSteps, 3000); // Poll every 3 seconds
+            return () => clearInterval(interval);
+        }
+    }, [currentUser]);
+
+    // Initial Load & Realtime Subscriptions
     useEffect(() => {
         loadData();
 
@@ -329,10 +381,13 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         // Realtime Subscriptions
         const channel = supabase.channel('app_updates')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'nudges' }, (payload) => {
-                if (currentUser && payload.new && (payload.new as Nudge).receiver_id === currentUser.id) {
-                    // Refresh nudges
-                    NudgeService.getUnreadCount(currentUser.id).then(setUnreadNudges);
-                    NudgeService.getNudges(currentUser.id).then(setNudges);
+                if (currentUser && payload.new) {
+                    const nudge = payload.new as Nudge;
+                    if (nudge.receiver_id === currentUser.id || nudge.sender_id === currentUser.id) {
+                        // Refresh nudges
+                        NudgeService.getUnreadCount(currentUser.id).then(setUnreadNudges);
+                        NudgeService.getNudges(currentUser.id).then(setNudges);
+                    }
                 }
             })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_steps' }, (payload) => {
@@ -347,12 +402,12 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         return () => {
             authListener.subscription.unsubscribe();
             supabase.removeChannel(channel);
-            if (pollingInterval) clearInterval(pollingInterval);
         };
     }, []);
 
     const refreshData = async () => {
         await loadData();
+        await syncSteps(); // Force sync on pull-to-refresh
     };
 
     const updateSteps = (newCount: number) => {
@@ -440,7 +495,10 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
             setActiveChallenge: async (c) => {
                 if (!currentUser) return;
                 await selectChallenge(c);
-            }
+            },
+            requestPermissions: initHybridTracking,
+            setCurrentUser,
+            isReady
         }}>
             {children}
         </AppContext.Provider>

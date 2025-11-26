@@ -208,7 +208,7 @@ export const ChallengeService = {
             `)
             .eq('couple_id', coupleId)
             .eq('status', 'completed')
-            .order('end_date', { ascending: false });
+            .order('created_at', { ascending: false });
 
         if (error) {
             Logger.error('Error fetching completed challenges:', error);
@@ -293,7 +293,7 @@ export const ChallengeService = {
                 .from('couple_challenges')
                 .update({
                     status: 'completed',
-                    end_date: new Date().toISOString()
+                    // end_date: new Date().toISOString() // Removed as column doesn't exist
                 })
                 .eq('couple_id', coupleId)
                 .eq('status', 'active');
@@ -344,5 +344,204 @@ export const ChallengeService = {
         }
 
         return false;
+    },
+    /**
+     * Resets the challenges table with a new set of fun, distance-based challenges.
+     * WARNING: This deletes all existing challenges!
+     */
+    async resetChallenges(): Promise<boolean> {
+        // 1. Delete all existing challenges
+        // Note: This might fail if there are foreign key constraints (active challenges).
+        // ideally we should cascade or clear those first, but for now let's try.
+        const { error: deleteError } = await supabase
+            .from('challenges')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+        if (deleteError) {
+            Logger.error('Error deleting challenges:', deleteError);
+            // If we can't delete, we might just append? No, user wants to replace.
+            // Let's assume for this "dev" task we can clear.
+            return false;
+        }
+
+        // 2. Insert new challenges
+        const newChallenges = [
+            // --- SOLO CHALLENGES ---
+            {
+                title: "Central Park Stroll",
+                description: "A relaxing walk through NYC's green heart. Perfect for a weekend.",
+                goal: 13000,
+                type: 'solo',
+                image_url: "https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?w=800&q=80",
+                duration_days: 1
+            },
+            {
+                title: "Eiffel Tower Climb",
+                description: "Equivalent to climbing the Iron Lady 10 times!",
+                goal: 16500,
+                type: 'solo',
+                image_url: "https://images.unsplash.com/photo-1511739001486-6bfe10ce7859?w=800&q=80",
+                duration_days: 2
+            },
+            {
+                title: "Golden Gate Crossing",
+                description: "Walk the iconic bridge there and back again.",
+                goal: 7100,
+                type: 'solo',
+                image_url: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=800&q=80",
+                duration_days: 3
+            },
+            {
+                title: "Marathon Runner",
+                description: "Complete the classic 42km distance at your own pace.",
+                goal: 55000,
+                type: 'solo',
+                image_url: "https://images.unsplash.com/photo-1452626038306-9aae5e071dd3?w=800&q=80",
+                duration_days: 5
+            },
+            {
+                title: "Grand Canyon Rim",
+                description: "A breathtaking journey along the edge of the world.",
+                goal: 50000,
+                type: 'solo',
+                image_url: "https://images.unsplash.com/photo-1474044159687-1ee9f3a51722?w=800&q=80",
+                duration_days: 7
+            },
+            {
+                title: "Hadrian's Wall",
+                description: "Patrol the ancient Roman frontier in Northern England.",
+                goal: 153000,
+                type: 'solo',
+                image_url: "https://images.unsplash.com/photo-1564858852033-255d65418b48?w=800&q=80",
+                duration_days: 14
+            },
+            {
+                title: "Mount Fuji Ascent",
+                description: "The sacred climb to the summit of Japan.",
+                goal: 30000,
+                type: 'solo',
+                image_url: "https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=800&q=80",
+                duration_days: 20
+            },
+            {
+                title: "Inca Trail",
+                description: "The legendary path to the lost city of Machu Picchu.",
+                goal: 70000,
+                type: 'solo',
+                image_url: "https://images.unsplash.com/photo-1526392060635-9d6019884377?w=800&q=80",
+                duration_days: 30
+            },
+            {
+                title: "Iceland Ring Road",
+                description: "A complete tour of fire and ice.",
+                goal: 1750000,
+                type: 'solo',
+                image_url: "https://images.unsplash.com/photo-1476610182048-b716b8518aae?w=800&q=80",
+                duration_days: 45
+            },
+            {
+                title: "Walk to the ISS",
+                description: "The distance from Earth to the Space Station's orbit!",
+                goal: 535000,
+                type: 'solo',
+                image_url: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80",
+                duration_days: 90
+            },
+
+            // --- COUPLE CHALLENGES ---
+            {
+                title: "Romantic Paris Stroll",
+                description: "Explore the City of Lights together, hand in hand.",
+                goal: 26000,
+                type: 'couple',
+                image_url: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=800&q=80",
+                duration_days: 5
+            },
+            {
+                title: "Venice Canals",
+                description: "Get lost in the winding streets and bridges of Venice.",
+                goal: 20000,
+                type: 'couple',
+                image_url: "https://images.unsplash.com/photo-1514890547357-a9ee288728e0?w=800&q=80",
+                duration_days: 10
+            },
+            {
+                title: "Aloha Hawaii",
+                description: "An island hopping adventure through paradise.",
+                goal: 236000,
+                type: 'couple',
+                image_url: "https://images.unsplash.com/photo-1542259649-4d969828c57b?w=800&q=80",
+                duration_days: 21
+            },
+            {
+                title: "Paris to London",
+                description: "Connecting two great capitals across the channel.",
+                goal: 450000,
+                type: 'couple',
+                image_url: "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=800&q=80",
+                duration_days: 30
+            },
+            {
+                title: "Great Wall Section",
+                description: "Conquer a 100km section of the dragon of stone.",
+                goal: 130000,
+                type: 'couple',
+                image_url: "https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=800&q=80",
+                duration_days: 60
+            },
+            {
+                title: "Berlin to Rome",
+                description: "A grand European tour crossing the Alps.",
+                goal: 1968000,
+                type: 'couple',
+                image_url: "https://images.unsplash.com/photo-1531572753322-ad063cecc140?w=800&q=80",
+                duration_days: 90
+            },
+            {
+                title: "Sahara Crossing",
+                description: "Survive the endless sands as a team.",
+                goal: 2100000,
+                type: 'couple',
+                image_url: "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=800&q=80",
+                duration_days: 120
+            },
+            {
+                title: "Route 66",
+                description: "The ultimate American road trip.",
+                goal: 5170000,
+                type: 'couple',
+                image_url: "https://images.unsplash.com/photo-1525016281788-29984955700d?w=800&q=80",
+                duration_days: 180
+            },
+            {
+                title: "Amazon Expedition",
+                description: "A journey through the heart of the jungle.",
+                goal: 8400000,
+                type: 'couple',
+                image_url: "https://images.unsplash.com/photo-1572252821143-066749960dd8?w=800&q=80",
+                duration_days: 240
+            },
+            {
+                title: "Around the Moon",
+                description: "A giant leap for your relationship.",
+                goal: 14300000,
+                type: 'couple',
+                image_url: "https://images.unsplash.com/photo-1522030299830-16b8d3d049fe?w=800&q=80",
+                duration_days: 365
+            }
+        ];
+
+        const { error: insertError } = await supabase
+            .from('challenges')
+            .insert(newChallenges);
+
+        if (insertError) {
+            Logger.error('Error inserting new challenges:', insertError);
+            return false;
+        }
+
+        Logger.info('Challenges reset successfully!');
+        return true;
     }
 };

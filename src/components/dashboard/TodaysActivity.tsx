@@ -19,11 +19,11 @@ export const TodaysActivity = () => {
     // ...
 
 
-    const { currentUser, partner, steps, isSolo } = useApp();
+    const { currentUser, partner, steps, stepHistory, isSolo } = useApp();
 
     const getTodaySteps = (userId: string) => {
         const today = new Date().toISOString().split('T')[0];
-        return steps.find(s => s.userId === userId && s.date === today)?.count || 0;
+        return stepHistory.find(s => s.userId === userId && s.date === today)?.count || 0;
     };
 
     const userSteps = currentUser ? getTodaySteps(currentUser.id) : 0;
