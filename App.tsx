@@ -7,15 +7,19 @@ import { AppProvider } from './src/context/AppContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { Colors } from './src/constants/Colors';
 
+import { ErrorBoundary } from './src/components/ErrorBoundary';
+
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <AppProvider>
-        <NavigationContainer>
-          <StatusBar style="dark" backgroundColor={Colors.background} />
-          <AppNavigator />
-        </NavigationContainer>
-      </AppProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <AppProvider>
+          <NavigationContainer>
+            <StatusBar style="dark" backgroundColor={Colors.background} />
+            <AppNavigator />
+          </NavigationContainer>
+        </AppProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }

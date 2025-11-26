@@ -13,7 +13,7 @@ import { PartnerProfileSheet } from '../components/PartnerProfileSheet';
 import { FeedbackSheet } from '../components/FeedbackSheet';
 
 export const AccountScreen = () => {
-    const { currentUser, partner, steps, isPartnerActive } = useApp();
+    const { currentUser, partner, steps, stepHistory, isPartnerActive } = useApp();
     const [userEmail, setUserEmail] = useState<string>('');
     const [debugSheetVisible, setDebugSheetVisible] = useState(false);
 
@@ -49,8 +49,8 @@ export const AccountScreen = () => {
     const partnerSteps = useMemo(() => {
         if (!partner) return 0;
         const today = new Date().toISOString().split('T')[0];
-        return steps.find(s => s.userId === partner.id && s.date === today)?.count || 0;
-    }, [steps, partner]);
+        return stepHistory.find(s => s.userId === partner.id && s.date === today)?.count || 0;
+    }, [stepHistory, partner]);
 
     const partnerHighestStreak = useMemo(() => {
         if (!partner) return 0;
@@ -62,7 +62,7 @@ export const AccountScreen = () => {
             const checkDate = new Date(today);
             checkDate.setDate(checkDate.getDate() - i);
             const dateStr = checkDate.toISOString().split('T')[0];
-            const hasSteps = steps.some(s => s.userId === partner.id && s.date === dateStr && s.count > 0);
+            const hasSteps = stepHistory.some(s => s.userId === partner.id && s.date === dateStr && s.count > 0);
 
             if (hasSteps) {
                 currentTempStreak++;
@@ -72,7 +72,7 @@ export const AccountScreen = () => {
             }
         }
         return maxStreak;
-    }, [steps, partner]);
+    }, [stepHistory, partner]);
 
     const handleSignOut = async () => {
         const { error } = await supabase.auth.signOut();
